@@ -24,21 +24,40 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
 	ALLOWED_EDIT_MODELS,
-	DEFAULT_EDIT_MODEL,
 	editImage,
 	isReferenceUrl,
 	visionText
 } from '$lib/server/openrouter';
 
-/** The zap itself: one broad, surgical removal instruction. */
+/**
+ * The zap itself: one surgical removal instruction.
+ *
+ * These edit models are generative and unmasked — they re-synthesise whole
+ * regions rather than erase-and-inpaint. An open-ended "fill the space
+ * naturally" directive invites them to invent plausible decor (framed prints,
+ * tapestries) on the vacated walls that nobody asked for — worse on stronger
+ * models. So the instruction is explicitly subtractive: erase the listed items,
+ * rebuild the plain surface behind them, and add nothing.
+ */
 const ZAP_INSTRUCTION = [
-	'Remove every IKEA and generic flat-pack item from this room: IKEA furniture',
-	'(think KALLAX, BILLY, LACK, MALM, POÄNG, EKTORP), cheap mass-produced shelving,',
-	'flat-pack storage cubes, and generic framed posters/prints in thin frames.',
-	'Leave the walls, windows, floor, lighting, people, and all non-flat-pack',
-	'furniture exactly as they are. Fill the vacated space naturally so the room',
-	'looks like those items were never there.'
+	'Remove every IKEA and generic flat-pack item from this room',
+	'(KALLAX, BILLY, LACK, MALM, POÄNG, EKTORP, flat-pack storage cubes, cheap mass-produced shelving).',
+	'Erase ONLY those items and realistically reconstruct the plain wall and floor',
+	'surfaces that were behind them. Do NOT add, invent, or replace anything: no new',
+	'pictures, frames, posters, tapestries, wall hangings, art, plants, rugs, or',
+	'furniture of any kind. Leave the walls blank where items were removed. Keep',
+	'everything else — walls, windows, floor, lighting, people, and all remaining',
+	'non-flat-pack furniture — exactly as-is.'
 ].join(' ');
+
+/**
+ * The zap runs once, unattended, on the user's real photo — quality matters more
+ * than speed/cost here, so it defaults to Pro (Nano Banana Pro), which does
+ * markedly cleaner localised removals and preserves people/geometry far better
+ * than Flash. The neutral `/api/edit-image` agent tool keeps the cheaper Flash
+ * default; a caller may still override via the `model` field.
+ */
+const ZAP_MODEL = 'google/gemini-3-pro-image';
 
 /** Vision model for the critique pass — needs taste, not muscle. */
 const CRITIQUE_MODEL = 'google/gemini-2.5-flash';
@@ -82,7 +101,7 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 	}
 
 	const image = typeof body.image === 'string' ? body.image.trim() : '';
-	const model = typeof body.model === 'string' && body.model ? body.model : DEFAULT_EDIT_MODEL;
+	const model = typeof body.model === 'string' && body.model ? body.model : ZAP_MODEL;
 
 	if (!image) throw error(400, 'Missing "image": a data URI or https URL of the room photo.');
 	if (!isReferenceUrl(image)) {
