@@ -41,7 +41,7 @@ export class Journey {
 	suggestions = $state<string[]>([]);
 	/** True while a reply (canned beat, zap, edit, or agent turn) is in flight. */
 	thinking = $state(false);
-	/** True while the opening live zap is running — drives the scan treatment. */
+	/** True while any image render is in flight (opening zap or a later edit) — drives the scan treatment. */
 	zapping = $state(false);
 	/** Which engine is driving: the live agent, or the canned machine. */
 	mode = $state<'live' | 'canned'>('canned');
@@ -192,6 +192,7 @@ export class Journey {
 			return 'The edit could not run (no instruction or no room on screen). Apologise briefly and carry on.';
 		}
 
+		this.zapping = true;
 		try {
 			const res = await fetch('/api/edit-image', {
 				method: 'POST',
@@ -212,6 +213,8 @@ export class Journey {
 			);
 		} catch {
 			return 'The edit failed on the server. Apologise briefly and offer to try again.';
+		} finally {
+			this.zapping = false;
 		}
 	}
 
