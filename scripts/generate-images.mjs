@@ -65,13 +65,16 @@ const CONSISTENCY =
 	'Do not add a watermark or text.';
 
 /**
- * name → { prompt, from }. `from` is a stage name or a committed file. Each
- * stage swaps ONE item for a characterful second-hand piece — the "then we
- * redesign it together" half of the story.
+ * name → { prompt, from, extraRefs? }. `from` is a stage name or a committed
+ * file; `extraRefs` are additional reference images (e.g. a product photo of
+ * an object to place in the room). Two families:
+ *   demo-*    — the homepage demo loop (each stage swaps one item)
+ *   journey-* — the canned workspace walkthrough (sofa removed + A/B try-ons,
+ *               bookcase A/B, and the Bonhams bust finale)
  */
 const STAGES = [
 	{
-		name: 'bookcase',
+		name: 'demo-bookcase',
 		from: 'static/images/ikea-room-zapped.jpg',
 		prompt:
 			'Replace the tall bookcase on the right-hand wall with a characterful antique dark-oak ' +
@@ -79,27 +82,82 @@ const STAGES = [
 			CONSISTENCY
 	},
 	{
-		name: 'sofa',
-		from: 'bookcase',
+		name: 'demo-sofa',
+		from: 'demo-bookcase',
 		prompt:
 			'Replace the blue sofa (and the throw draped over it) with an elegant vintage tan leather ' +
 			'chesterfield sofa with a couple of tasteful cushions. ' +
 			CONSISTENCY
 	},
 	{
-		name: 'table',
-		from: 'sofa',
+		name: 'demo-table',
+		from: 'demo-sofa',
 		prompt:
 			'Replace the wooden coffee table with a mid-century teak coffee table with slender tapered ' +
 			'legs, a small stack of hardbacks and a ceramic vase on top. ' +
 			CONSISTENCY
 	},
 	{
-		name: 'chair',
-		from: 'table',
+		name: 'demo-chair',
+		from: 'demo-table',
 		prompt:
 			'Replace the armchair the person is sitting in with a classic upholstered wingback armchair ' +
 			'in deep green, keeping the person seated exactly as they are. ' +
+			CONSISTENCY
+	},
+
+	// ---- the canned workspace journey ----------------------------------------
+	// Sofa REMOVED first (per feedback), A/B replacements as optional try-ons,
+	// bookcases chained from the sofa-less room (the canonical path), then the
+	// Bonhams bust placed via a second reference image.
+	{
+		name: 'journey-sofa-removed',
+		from: 'static/images/ikea-room-zapped.jpg',
+		prompt:
+			'Remove the blue sofa — along with the throw draped over it, its cushions and the clutter ' +
+			'sitting on it — completely, leaving clean empty floor and wall where it stood. ' +
+			CONSISTENCY
+	},
+	{
+		name: 'journey-sofa-a',
+		from: 'static/images/ikea-room-zapped.jpg',
+		prompt:
+			'Replace the blue sofa (and the throw draped over it, and the clutter on it) with an elegant ' +
+			'vintage tan leather chesterfield sofa with a couple of tasteful cushions. ' +
+			CONSISTENCY
+	},
+	{
+		name: 'journey-sofa-b',
+		from: 'static/images/ikea-room-zapped.jpg',
+		prompt:
+			'Replace the blue sofa (and the throw draped over it, and the clutter on it) with a ' +
+			'mid-century sofa in deep teal velvet with warm wooden legs and a couple of tasteful cushions. ' +
+			CONSISTENCY
+	},
+	{
+		name: 'journey-bookcase-a',
+		from: 'journey-sofa-removed',
+		prompt:
+			'Replace the tall bookcase on the right-hand wall with a characterful antique dark-oak ' +
+			'bookcase with glazed doors, its shelves warmly and neatly filled. ' +
+			CONSISTENCY
+	},
+	{
+		name: 'journey-bookcase-b',
+		from: 'journey-sofa-removed',
+		prompt:
+			'Replace the tall bookcase on the right-hand wall with an open mid-century teak shelving ' +
+			'unit with slim uprights, neatly styled with books, a plant and ceramics. ' +
+			CONSISTENCY
+	},
+	{
+		name: 'journey-bust',
+		from: 'journey-bookcase-a',
+		extraRefs: ['static/images/bonhams-bust.jpg'],
+		prompt:
+			'Place the small ancient Egyptian cobalt-blue glass bust from the second reference image on ' +
+			'the coffee table in this room, at a realistic small scale (it is only a few centimetres ' +
+			'tall), lit consistently with the room. ' +
 			CONSISTENCY
 	}
 ];
@@ -111,9 +169,9 @@ const mime = (p) =>
 	] || 'image/jpeg';
 
 const toDataUri = (p) => `data:${mime(p)};base64,${readFileSync(p).toString('base64')}`;
-const outPath = (name) => join(OUT_DIR, `demo-${name}.png`);
+const outPath = (name) => join(OUT_DIR, `${name}.png`);
 
-async function edit(refPath, prompt) {
+async function edit(refPath, prompt, extraRefs = []) {
 	const res = await fetch(ENDPOINT, {
 		method: 'POST',
 		headers: {
@@ -125,7 +183,10 @@ async function edit(refPath, prompt) {
 		body: JSON.stringify({
 			model: MODEL,
 			prompt,
-			input_references: [{ type: 'image_url', image_url: { url: toDataUri(refPath) } }]
+			input_references: [refPath, ...extraRefs].map((p) => ({
+				type: 'image_url',
+				image_url: { url: toDataUri(p) }
+			}))
 		})
 	});
 	if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${(await res.text()).slice(0, 500)}`);
@@ -155,7 +216,7 @@ for (const stage of STAGES) {
 		continue;
 	}
 	process.stdout.write(`… ${stage.name.padEnd(9)} editing ${refPath} … `);
-	const { buffer, cost } = await edit(refPath, stage.prompt);
+	const { buffer, cost } = await edit(refPath, stage.prompt, stage.extraRefs);
 	writeFileSync(outPath(stage.name), buffer);
 	resolved[stage.name] = outPath(stage.name);
 	totalCost += cost || 0;

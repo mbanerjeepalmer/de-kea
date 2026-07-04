@@ -1,20 +1,19 @@
 /**
- * The scripted copy and demo imagery for the DE-KEA journey.
+ * The single source of truth for the DE-KEA v1.2 hardcoded walkthrough.
  *
- * Since v1.2 the room images are LIVE (edited from the user's actual photo via
- * `/api/zap` and `/api/edit-image`), so this file no longer scripts the whole
- * walkthrough — it holds:
- *   - the homepage demo imagery (the committed IKEA-heavy room + its zap),
- *   - the canned conversation copy for the scripted steps (live agent copy is
- *     TODO #3 / v1.3), and
- *   - fallback/error copy for when the live calls fail.
+ * Everything the "agent" says or shows lives here. All imagery is authored
+ * offline with `scripts/generate-images.mjs` (the same OpenRouter pipeline as
+ * the live endpoints, which stay as the v1.3 seam) and committed, so the app
+ * runs fully offline.
+ *
+ * The `## Removed` critique below is real `/api/zap` output for this room,
+ * lightly trimmed — canned, but honestly earned.
  */
-import type { LampStyle } from '$lib/journey/types';
+import type { ImageRef } from '$lib/journey/types';
 
 /**
  * Homepage demo: the whole product story in stills — the committed IKEA-heavy
- * room, its real `/api/zap` output, then the item-by-item redesign. Stages
- * after the zap are authored by `scripts/generate-images.mjs` (chained edits).
+ * room, its real `/api/zap` output, then the item-by-item redesign.
  */
 export const demoStages = [
 	{
@@ -49,61 +48,120 @@ export const demoStages = [
 	}
 ] as const;
 
-/**
- * Canned Markdown copy. Witheringly critical, per the brief.
- *
- * Note: the v1.1 hardcoded "What's your postcode?" recycling-centre line is
- * gone — per docs/v1.md it is removed for v1.2/v1.3 and returns in v1.4 with
- * real web browsing.
- */
+/** The canned journey imagery, step by step. */
+export const images = {
+	/** The room the user "photographed". */
+	before: {
+		src: '/images/ikea-room.png',
+		alt: 'Your room, before: crowded with IKEA furniture and flat-pack clutter.'
+	},
+	/** IKEA removed (real /api/zap output for this room). */
+	zapped: {
+		src: '/images/ikea-room-zapped.jpg',
+		alt: 'Your room with the IKEA removed.'
+	},
+	/** The blue sofa gone entirely — the canonical first move. */
+	sofaRemoved: {
+		src: '/images/journey-sofa-removed.png',
+		alt: 'The room with the blue sofa removed, leaving clean open floor.'
+	},
+	/** Sofa try-on A: vintage tan leather chesterfield. */
+	sofaA: {
+		src: '/images/journey-sofa-a.png',
+		alt: 'The room with a vintage tan leather chesterfield sofa.'
+	},
+	/** Sofa try-on B: mid-century teal velvet. */
+	sofaB: {
+		src: '/images/journey-sofa-b.png',
+		alt: 'The room with a mid-century sofa in deep teal velvet.'
+	},
+	/** Bookcase option A: antique dark oak with glazed doors. */
+	bookcaseA: {
+		src: '/images/journey-bookcase-a.png',
+		alt: 'The room with an antique dark-oak bookcase with glazed doors.'
+	},
+	/** Bookcase option B: open mid-century teak shelving. */
+	bookcaseB: {
+		src: '/images/journey-bookcase-b.png',
+		alt: 'The room with an open mid-century teak shelving unit.'
+	},
+	/** The Bonhams bust, in situ on the coffee table. */
+	bust: {
+		src: '/images/journey-bust.png',
+		alt: 'The finished room, with the ancient Egyptian cobalt-blue glass bust on the coffee table.'
+	},
+	/** The Bonhams lot photo, shared in the conversation. */
+	bustProduct: {
+		src: '/images/bonhams-bust.jpg',
+		alt: 'An ancient Egyptian cobalt-blue glass bust of a goddess, from Bonhams.'
+	}
+} as const satisfies Record<string, ImageRef>;
+
+/** Canned Markdown copy. Witheringly critical, per the brief. */
 export const copy = {
-	/**
-	 * Fallback removal list, used only when `/api/zap` returns no critique
-	 * (the zapped image still shows; this copy stays deliberately generic).
-	 */
-	zapFallback: `## Removed
+	/** Opening removal list — real /api/zap critique for this room, trimmed. */
+	removalList: `## Removed
 
-Every last flat-pack offender — shelving units bought by the metre, posters pretending to be art, and assorted cardboard-adjacent clutter.
+1. The **KALLAX** shelving unit — for when you absolutely insist on your books living in a series of tiny, identical prison cells.
+2. A **BILLY** bookcase — a staple of student digs everywhere; it screams "I haven't settled down yet, nor do I intend to."
+3. The **LACK** side table — the very definition of "just good enough", and about as inspiring as a tax return.
+4. **DRÖNA** storage boxes — because nothing says "I've tidied… ish" like hiding your clutter in identical fabric cubes.
 
-Honestly, it's a relief. The room can breathe now.
+Ah, the room can finally breathe. Which brings us to the tired blue **sofa** still squatting on the right. Shall we?`,
 
-Now — tell me what else should go. That **sofa**, perhaps?`,
+	/** The sofa is removed (canonical first move). */
+	sofaRemoved: `Gone. Stuffing masquerading as comfort, banished — look at all that honest floor.
 
-	/** When the zap call itself fails. */
-	zapError: `Hm. My scalpel slipped — I couldn't process that photo. Give it another go, or try a different shot (landscape, decent light).`,
+Now: want to see what *could* live there instead, move on to that **bookcase**, or are you happy with the room as it stands?`,
 
-	/** When a follow-up edit fails. */
-	editError: `That edit didn't take — even good taste has off days. Say it again and I'll have another go.`,
+	/** Sofa try-on A. */
+	sofaA: `A vintage tan leather **chesterfield**. Deep buttons, decades of character, and it will outlive us both. Keep going, move on to the bookcase, or tell me you're happy.`,
 
-	/** After the user asks to also lose the sofa. */
-	sofaRemoved: `Gone. That sofa was doing you no favours — stuffing masquerading as comfort.
+	/** Sofa try-on B. */
+	sofaB: `A mid-century number in **teal velvet** — warm wooden legs, a little louche, entirely sure of itself. Keep going, move on, or say you're happy.`,
 
-Now, let's give the space some character. Start with light: what kind of **lamp** speaks to you — *modern*, *retro*, or *classic*?`,
+	/** Asked once the first item is settled. */
+	costQuestion: `Good — that's the first piece settled. Which brings us to logistics: are we **cost conscious**, or **happy to splash out**? No judgement either way. *(Some judgement.)*`,
 
-	/** Per-style flavour when the user tries a lamp. */
-	lamp: {
-		modern: `**Modern** it is. Clean lines, a whisper of brass — it looks intentional, not accidental. Try another style, or tell me when you've found the one.`,
-		retro: `**Retro**. Warm, a little bit playful, and with actual soul — unlike anything that ever arrived in a cardboard box. Try another, or say the word when you're happy.`,
-		classic: `**Classic**. Timeless and quietly confident. This is a lamp that will still look right in twenty years. Try another, or let me know when it's the one.`
-	} as Record<LampStyle, string>,
+	/** After they answer the cost question. */
+	locationQuestion: `Taste on a budget — my favourite kind. Second-hand is where the character lives anyway.
+
+Now, where are you? A neighbourhood or a postcode will do.`,
+
+	/** After they share where they are (the script expects Dalston-ish). */
+	sourcing: `**Dalston!** Then you hardly need me: the charity shops along **Kingsland Road** are a goldmine — sofas, lamps and the occasional minor miracle at a fraction of flat-pack prices. Give yourself a Saturday morning there.
+
+Meanwhile, that **bookcase** is still lurking. Shall we deal with it?`,
+
+	/** Bookcase option A. */
+	bookcaseA: `An antique **dark-oak bookcase with glazed doors**. Books behind glass — like they matter. Because they do. Try another, or tell me when you're happy.`,
+
+	/** Bookcase option B. */
+	bookcaseB: `Open **mid-century teak shelving** — slim, honest, and it makes even the paperbacks look curated. Try another, or say the word when you're happy.`,
+
+	/** The finale: the Bonhams bust. */
+	bustIntro: `One more thing. A room this good deserves a conversation piece, and I've found yours: an **ancient Egyptian cobalt-blue glass bust of a goddess**, going under the hammer at Bonhams. Three thousand years old and still better-looking than anything in a blue-and-yellow warehouse. Here's how she'd sit on your coffee table:`,
 
 	/** Terminal wrap-up. */
-	end: `Beautiful. That's a room with a point of view.
-
-<!-- v1.4: sourcing suggestions require web browsing; hardcoded until then. -->
-There's a **British Heart Foundation** two streets over with a genuinely good mid-century lamp in the window right now. Failing that: eBay, Gumtree, Freecycle, and Saturday's street market are all better ideas than another trip to the big blue shed.
+	end: `There it is — a room with a point of view. Kingsland Road, eBay, Freecycle and the odd auction house did what the big blue shed never could.
 
 Go and make something you love.`,
 
-	/** Gentle nudge when free-text input doesn't match the expected intent. */
-	nudgeZapped: `Take your time. When you're ready, tell me what else should go — that **sofa**, perhaps?`,
-	nudgeStyle: `No rush. Say *modern*, *retro*, or *classic* to try a lamp — or tell me when you're happy with one.`
+	/** Gentle nudges when free-text input doesn't match the expected intent. */
+	nudgeZapped: `Take your time. When you're ready, say the word and that **sofa** is history.`,
+	nudgeSofa: `No rush. See some sofa options, move on to the **bookcase**, or tell me you're happy with the room.`,
+	nudgeBookcase: `Say *another* to see a different bookcase, or tell me when you're happy with the room.`
 } as const;
 
 /** Suggested-reply chips that seed common inputs into the chat box. */
 export const suggestions = {
-	zapped: ['Also get rid of the sofa'],
-	replaceSofa: ['Modern', 'Retro', 'Classic'],
-	styleLamp: ['Try retro', 'Try classic', "I love it — I'm done"],
-	zapFailed: ['Try again']
+	zapped: ['Get rid of the sofa'],
+	// (a) keep going with the current item, (b) next item, (c) happy with the room
+	sofaRemoved: ['Show me sofa options', 'Next: the bookcase', "I'm happy with the room"],
+	sofaOptions: ['Try another sofa', 'Next: the bookcase', "I'm happy with the room"],
+	cost: ['Cost conscious', 'Happy to splash out'],
+	// The location question deliberately has no chips — the user types where they are.
+	location: [],
+	bookcaseOffer: ['Replace the bookcase', "I'm happy with the room"],
+	bookcaseOptions: ['Try another bookcase', "I'm happy with the room"]
 } as const;

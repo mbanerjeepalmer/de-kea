@@ -1,22 +1,23 @@
 /**
- * Shared types for the DE-KEA journey.
+ * Shared types for the DE-KEA scripted journey.
  *
- * Since v1.2 the images are LIVE: transitions that change the room carry a
- * `RoomEdit` and the store performs it against `/api/edit-image` on the user's
- * actual photo. The conversation *copy* for the scripted steps is still canned
- * (the live agent conversation is TODO #3 / v1.3).
+ * v1.2 is a hardcoded walkthrough: every image is authored offline with
+ * `scripts/generate-images.mjs` (the same OpenRouter pipeline as the live
+ * `/api/zap` + `/api/edit-image` endpoints, which stay in place as the v1.3
+ * seam) and committed to the repo, so the app runs fully offline.
  */
 
 export type StepId =
-	| 'home'
-	| 'capture'
-	| 'zapping'
-	| 'zapped'
-	| 'replace-sofa'
-	| 'style-lamp'
+	| 'zapped' // IKEA removed; the withering inventory
+	| 'sofa' // sofa removed (the canonical first move)
+	| 'sofa-a' // trying sofa option A (chesterfield)
+	| 'sofa-b' // trying sofa option B (teal velvet)
+	| 'cost' // "cost conscious or happy to splash out?"
+	| 'location' // "where are you?"
+	| 'bookcase-offer' // sourcing sorted; bookcase teased
+	| 'bookcase-a' // trying bookcase option A (antique oak, glazed)
+	| 'bookcase-b' // trying bookcase option B (mid-century teak)
 	| 'end';
-
-export type LampStyle = 'modern' | 'retro' | 'classic';
 
 export interface ImageRef {
 	src: string;
@@ -33,31 +34,14 @@ export interface Message {
 	image?: ImageRef;
 }
 
-/** A live image edit the store must perform to realise a transition. */
-export interface RoomEdit {
-	/** Imperative instruction for `/api/edit-image` (e.g. "Remove the sofa…"). */
-	instruction: string;
-	/** Alt text for the resulting image. */
-	alt: string;
-	/**
-	 * Whether the result becomes the new base room state that later edits build
-	 * on. Removals commit; try-a-lamp renders don't (each lamp is tried against
-	 * the lamp-less room, so styles swap instead of stacking).
-	 */
-	commit: boolean;
-}
-
 /** The result of feeding user input into the machine at a given step. */
 export interface Transition {
 	/** The step we move to (may equal the current step for in-place updates). */
 	next: StepId;
-	/**
-	 * Agent messages to append to the transcript, in order. When `edit` is set,
-	 * the edited image is prepended to these at runtime.
-	 */
+	/** Agent messages to append to the transcript, in order. */
 	reply: Message[];
-	/** If set, the store performs this live edit; its result fills the image pane. */
-	edit?: RoomEdit;
+	/** If set, the top image pane swaps to this image. */
+	imagePane?: ImageRef;
 	/** Suggested reply chips to surface after this reply (seed common inputs). */
 	suggestions?: string[];
 }

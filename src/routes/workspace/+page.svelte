@@ -1,27 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
 	import { Journey } from '$lib/journey/store.svelte';
-	import { loadRoomPhoto } from '$lib/journey/room';
 	import TitleBand from '$lib/components/TitleBand.svelte';
 	import ImagePane from '$lib/components/ImagePane.svelte';
 	import ConversationPane from '$lib/components/ConversationPane.svelte';
 
+	// The canned journey starts at the zapped state the moment we land here.
 	const journey = new Journey();
 
 	// Which pane, if any, is expanded to fill the workspace.
 	let expanded = $state<'none' | 'image' | 'conversation'>('none');
 
 	const ended = $derived(journey.step === 'end');
-	const zapping = $derived(journey.step === 'zapping' && journey.thinking);
-
-	// The live opening move: zap the IKEA out of the captured photo. No photo
-	// (direct visit, expired session) means back to "Take photo".
-	onMount(() => {
-		const photo = loadRoomPhoto();
-		if (photo) journey.init(photo);
-		else goto('/');
-	});
 
 	function toggle(pane: 'image' | 'conversation') {
 		expanded = expanded === pane ? 'none' : pane;
@@ -39,7 +28,6 @@
 		{#if expanded !== 'conversation'}
 			<ImagePane
 				image={journey.imagePane}
-				busy={zapping}
 				expanded={expanded === 'image'}
 				ontoggle={() => toggle('image')}
 			/>

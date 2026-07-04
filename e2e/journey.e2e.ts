@@ -1,109 +1,66 @@
-import { expect, test, type Page } from '@playwright/test';
-
-// Tiny 1x1 PNGs so the mocked "edits" are visibly distinct data URIs.
-const PNG = (b64: string) => `data:image/png;base64,${b64}`;
-const ZAPPED = PNG(
-	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
-);
-const EDITED = PNG(
-	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
-);
-
-const CRITIQUE = `## Removed
-
-1. A **BILLY** bookcase (yawn) — shelving by the metre.
-
-Honestly, it's a relief. That sofa next, perhaps?`;
-
-/** Seed the captured photo so /workspace has something to zap. */
-async function seedPhoto(page: Page) {
-	await page.addInitScript(
-		([key, value]) => sessionStorage.setItem(key, value),
-		['dekea:room', ZAPPED] as const
-	);
-}
+import { expect, test } from '@playwright/test';
 
 /**
- * The E2E runs offline: the live endpoints are mocked at the network layer.
- * `instructions` collects what /api/edit-image was asked to do.
+ * The canned v1.2 walkthrough. The journey starts at /workspace (the zap has
+ * "already happened" by the time we land); homepage/camera entry is covered
+ * by the UX thread's tests. Fully offline — no network mocks needed.
  */
-async function mockApi(page: Page, instructions: string[] = []) {
-	await page.route('**/api/zap', async (route) => {
-		await route.fulfill({ json: { image: ZAPPED, critique: CRITIQUE, model: 'mock', cost: 0 } });
-	});
-	await page.route('**/api/edit-image', async (route) => {
-		instructions.push((route.request().postDataJSON() as { instruction: string }).instruction);
-		await route.fulfill({ json: { image: EDITED, model: 'mock', cost: 0, description: null } });
-	});
-}
+test('the journey: zap → sofa → cost → Dalston → Kingsland Road → bookcase → bust', async ({
+	page
+}) => {
+	await page.goto('/workspace');
 
-test('happy path: home → live zap → replace sofa → lamp → end', async ({ page }) => {
-	const instructions: string[] = [];
-	await mockApi(page, instructions);
-
-	// Home: pitch + demo + CTAs.
-	await page.goto('/');
-	await expect(page.getByRole('heading', { name: 'DE-KEA' })).toBeVisible();
-	await expect(page.getByTestId('demo-video')).toBeVisible();
-
-	// "Take photo": pick a real file through the hidden input — it's read,
-	// downscaled and stashed, then we land in the workspace.
-	await page.getByTestId('photo-input').setInputFiles('tests/fixtures/rooms/ikea-room.png');
-	await expect(page).toHaveURL(/\/workspace$/);
-
-	// Zapped: the (mocked) live critique and the zapped image arrive.
+	// Zapped: the withering removal list and the after image are already there.
 	await expect(page.getByRole('heading', { name: 'Removed' })).toBeVisible();
-	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', ZAPPED);
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /ikea-room-zapped/);
 
-	// Ask to lose the sofa (free text): a live edit is requested and rendered.
-	await page.getByTestId('chat-input').fill('can you also get rid of the sofa');
-	await page.getByTestId('chat-send').click();
+	// First move: get rid of the sofa (chip).
+	await page.getByRole('button', { name: 'Get rid of the sofa' }).click();
 	await expect(page.getByText('Gone.', { exact: false })).toBeVisible();
-	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', EDITED);
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-removed/);
 
-	// Try a lamp style via a suggestion chip.
-	await page.getByRole('button', { name: 'Retro' }).click();
-	await expect(page.getByText('actual soul', { exact: false })).toBeVisible();
+	// Keep going with the current item: sofa try-ons A then B.
+	await page.getByRole('button', { name: 'Show me sofa options' }).click();
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-a/);
+	await page.getByRole('button', { name: 'Try another sofa' }).click();
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-b/);
 
-	// The edits asked for what the user asked for.
-	expect(instructions[0]).toMatch(/remove the sofa/i);
-	expect(instructions[1]).toMatch(/retro tripod floor lamp/i);
+	// Move on: the first item is settled, so the cost question arrives.
+	await page.getByRole('button', { name: 'Next: the bookcase' }).click();
+	await expect(page.getByText('which brings us to logistics', { exact: false })).toBeVisible();
 
-	// Wrap up.
-	await page.getByRole('button', { name: /I love it/ }).click();
+	// Cost conscious → the location question, with no presuggested answer.
+	await page.getByRole('button', { name: 'Cost conscious' }).click();
+	await expect(page.getByText('where are you', { exact: false })).toBeVisible();
+	await expect(page.getByTestId('suggestions')).toHaveCount(0);
+
+	// Type the location; Kingsland Road gets the nod.
+	await page.getByTestId('chat-input').fill('Dalston');
+	await page.getByTestId('chat-send').click();
+	await expect(page.getByText('Kingsland Road', { exact: false })).toBeVisible();
+
+	// The bookcase: option A, then B.
+	await page.getByRole('button', { name: 'Replace the bookcase' }).click();
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-bookcase-a/);
+	await page.getByRole('button', { name: 'Try another bookcase' }).click();
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-bookcase-b/);
+
+	// Happy with the room → the Bonhams bust finale, then the journey ends.
+	await page.getByRole('button', { name: /happy with the room/ }).click();
+	await expect(page.getByText('Bonhams', { exact: false })).toBeVisible();
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-bust/);
 	await expect(page.getByTestId('ended')).toBeVisible();
 	await expect(page.getByTestId('chat-input')).toHaveCount(0);
 });
 
-test('a failed zap offers a retry that succeeds', async ({ page }) => {
-	let calls = 0;
-	await page.route('**/api/zap', async (route) => {
-		calls += 1;
-		if (calls === 1) {
-			await route.fulfill({ status: 502, json: { message: 'upstream sad' } });
-		} else {
-			await route.fulfill({ json: { image: ZAPPED, critique: CRITIQUE, model: 'mock', cost: 0 } });
-		}
-	});
-
-	await seedPhoto(page);
+test('free text works as well as chips (loose intent matching)', async ({ page }) => {
 	await page.goto('/workspace');
-	await expect(page.getByText('scalpel slipped', { exact: false })).toBeVisible();
-
-	await page.getByRole('button', { name: 'Try again' }).click();
-	await expect(page.getByRole('heading', { name: 'Removed' })).toBeVisible();
-	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', ZAPPED);
-});
-
-test('visiting the workspace without a photo bounces back home', async ({ page }) => {
-	await page.goto('/workspace');
-	await expect(page).toHaveURL(/\/$/);
-	await expect(page.getByRole('heading', { name: 'DE-KEA' })).toBeVisible();
+	await page.getByTestId('chat-input').fill('please bin that horrible couch');
+	await page.getByTestId('chat-send').click();
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-removed/);
 });
 
 test('either pane can expand to fill the workspace and collapse back', async ({ page }) => {
-	await mockApi(page);
-	await seedPhoto(page);
 	await page.goto('/workspace');
 	await expect(page.getByTestId('image-pane')).toBeVisible();
 	await expect(page.getByTestId('conversation-pane')).toBeVisible();
