@@ -9,6 +9,8 @@
 	// images; no media file, no network.
 
 	let current = $state(0);
+	// What this beat did to the room ("REMOVED", "+ SOFA"); the before stage has none.
+	const label = $derived((demoStages[current] as { label?: string }).label);
 
 	onMount(() => {
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -41,7 +43,7 @@
 		{#if current === 0}
 			<IkeaLogo /> JUNK
 		{:else}
-			<DekeaLogo />
+			<DekeaLogo />{#if label}<span>{label}</span>{/if}
 		{/if}
 	</span>
 </div>

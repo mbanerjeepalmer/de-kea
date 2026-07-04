@@ -22,23 +22,28 @@ export const demoStages = [
 	},
 	{
 		src: '/images/ikea-room-removed.png',
-		alt: 'The same living room with the IKEA junk genuinely removed — bare walls and open space, nothing new added.'
+		alt: 'The same living room with the IKEA junk genuinely removed — bare walls and open space, nothing new added.',
+		label: 'REMOVED'
 	},
 	{
 		src: '/images/demo-bookcase.png',
-		alt: 'The room with an antique dark-oak bookcase with glazed doors.'
+		alt: 'The room with an antique dark-oak bookcase with glazed doors.',
+		label: '+ BOOKCASE'
 	},
 	{
 		src: '/images/demo-sofa.png',
-		alt: 'The room with a vintage tan leather chesterfield sofa.'
+		alt: 'The room with a vintage tan leather chesterfield sofa.',
+		label: '+ SOFA'
 	},
 	{
 		src: '/images/demo-table.png',
-		alt: 'The room with a mid-century teak coffee table.'
+		alt: 'The room with a mid-century teak coffee table.',
+		label: '+ TABLE'
 	},
 	{
 		src: '/images/demo-chair.png',
-		alt: 'The finished room, with a deep green wingback armchair.'
+		alt: 'The finished room, with a deep green wingback armchair.',
+		label: '+ ARMCHAIR'
 	}
 ] as const;
 
