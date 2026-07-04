@@ -15,7 +15,7 @@
  */
 import { Conversation } from '@elevenlabs/client';
 import { start, advance } from './machine';
-import { images, copy, suggestions as chips } from '$lib/fixtures/script';
+import { images, copy } from '$lib/fixtures/script';
 import { loadRoomPhoto, fetchAsDataUri } from './photo';
 import type { ImageRef, Message, StepId } from './types';
 
@@ -38,7 +38,6 @@ export class Journey {
 	step = $state<StepId>('zapped');
 	transcript = $state<Message[]>([]);
 	imagePane = $state<ImageRef | null>(null);
-	suggestions = $state<string[]>([]);
 	/** True while a reply (canned beat, zap, edit, or agent turn) is in flight. */
 	thinking = $state(false);
 	/** True while any image render is in flight (opening zap or a later edit) — drives the scan treatment. */
@@ -71,7 +70,6 @@ export class Journey {
 		this.mode = 'live';
 		this.step = 'live';
 		this.transcript = [];
-		this.suggestions = [];
 		this.imagePane = { src: photo, alt: images.before.alt };
 		this.zapping = true;
 		this.thinking = true;
@@ -131,10 +129,6 @@ export class Journey {
 					'The edited room is on screen. Continue the conversation from here when the user speaks.'
 				].join('\n')
 			);
-
-			// No canned chips here: `chips.zapped` ("Get rid of the sofa") assumes the
-			// demo room's specific furniture. The live critique already names a real
-			// next-move candidate in its closing line — the user replies free-text.
 		} catch {
 			await this.teardownSession();
 			this.resetCanned();
@@ -156,7 +150,6 @@ export class Journey {
 		if (!text || this.thinking) return this.step;
 
 		this.transcript = [...this.transcript, { role: 'user', kind: 'text', markdown: text }];
-		this.suggestions = [];
 
 		if (this.mode === 'live' && this.session) {
 			this.thinking = true;
@@ -172,7 +165,6 @@ export class Journey {
 		queueReply(() => {
 			this.transcript = [...this.transcript, ...t.reply];
 			if (t.imagePane) this.imagePane = t.imagePane;
-			this.suggestions = t.suggestions ?? [];
 			this.thinking = false;
 		});
 
@@ -231,7 +223,6 @@ export class Journey {
 				'*(The live line to the studio dropped — continuing with the house script.)*'
 			)
 		];
-		this.suggestions = [...chips.zapped];
 	}
 
 	private async teardownSession() {
@@ -246,7 +237,6 @@ export class Journey {
 		this.step = s.step;
 		this.transcript = s.transcript;
 		this.imagePane = s.imagePane;
-		this.suggestions = s.suggestions;
 		this.thinking = false;
 		this.zapping = false;
 	}

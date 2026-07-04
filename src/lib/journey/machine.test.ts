@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { start, advance, wantsSofaGone, wantsOptions, wantsBookcase, isDone } from './machine';
-import { images, copy, suggestions } from '$lib/fixtures/script';
+import { images, copy } from '$lib/fixtures/script';
 
 describe('intent heuristics', () => {
 	describe('wantsSofaGone', () => {
@@ -62,7 +62,6 @@ describe('start()', () => {
 		expect(s.imagePane).toEqual(images.zapped);
 		expect(s.transcript[0]).toEqual({ role: 'agent', kind: 'image', image: images.zapped });
 		expect(s.transcript[1]).toEqual({ role: 'agent', kind: 'text', markdown: copy.removalList });
-		expect(s.suggestions).toEqual([...suggestions.zapped]);
 	});
 });
 
@@ -73,7 +72,6 @@ describe('advance() — zapped', () => {
 		expect(t.imagePane).toEqual(images.sofaRemoved);
 		expect(t.reply[0]).toEqual({ role: 'agent', kind: 'image', image: images.sofaRemoved });
 		expect(t.reply[1]).toEqual({ role: 'agent', kind: 'text', markdown: copy.sofaRemoved });
-		expect(t.suggestions).toEqual([...suggestions.sofaRemoved]);
 	});
 
 	it('nudges (staying put) when the input does not match', () => {
@@ -90,7 +88,6 @@ describe('advance() — the sofa stage', () => {
 		expect(t.next).toBe('sofa-a');
 		expect(t.imagePane).toEqual(images.sofaA);
 		expect(t.reply[1]).toEqual({ role: 'agent', kind: 'text', markdown: copy.sofaA });
-		expect(t.suggestions).toEqual([...suggestions.sofaOptions]);
 	});
 
 	it('toggles between try-ons A and B', () => {
@@ -105,7 +102,6 @@ describe('advance() — the sofa stage', () => {
 			const t = advance(step, 'Next: the bookcase');
 			expect(t.next).toBe('cost');
 			expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.costQuestion }]);
-			expect(t.suggestions).toEqual([...suggestions.cost]);
 			expect(t.imagePane).toBeUndefined();
 		}
 	);
@@ -117,18 +113,16 @@ describe('advance() — the sofa stage', () => {
 });
 
 describe('advance() — cost and location', () => {
-	it('any cost answer leads to the location question, with no suggested chips', () => {
+	it('any cost answer leads to the location question', () => {
 		const t = advance('cost', 'Cost conscious');
 		expect(t.next).toBe('location');
 		expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.locationQuestion }]);
-		expect(t.suggestions).toEqual([]);
 	});
 
 	it('the typed location gets the Kingsland Road recommendation and the bookcase tease', () => {
 		const t = advance('location', 'Dalston');
 		expect(t.next).toBe('bookcase-offer');
 		expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.sourcing }]);
-		expect(t.suggestions).toEqual([...suggestions.bookcaseOffer]);
 	});
 });
 

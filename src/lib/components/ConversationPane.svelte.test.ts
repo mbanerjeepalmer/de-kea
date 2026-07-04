@@ -11,12 +11,10 @@ const transcript: Message[] = [
 function baseProps(overrides = {}) {
 	return {
 		transcript,
-		suggestions: ['Also get rid of the sofa'],
 		thinking: false,
 		ended: false,
 		expanded: false,
 		onsend: vi.fn(),
-		onpick: vi.fn(),
 		ontoggle: vi.fn(),
 		...overrides
 	};

@@ -16,6 +16,11 @@ async function forceCanned(page: Page) {
 test.beforeEach(async ({ page }) => {
 	await forceCanned(page);
 });
+async function say(page: Page, text: string) {
+	await page.getByTestId('chat-input').fill(text);
+	await page.getByTestId('chat-send').click();
+}
+
 test('the journey: zap → sofa → cost → Dalston → Kingsland Road → bookcase → bust', async ({
 	page
 }) => {
@@ -25,39 +30,37 @@ test('the journey: zap → sofa → cost → Dalston → Kingsland Road → book
 	await expect(page.getByRole('heading', { name: 'Removed' })).toBeVisible();
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /ikea-room-removed/);
 
-	// First move: get rid of the sofa (chip).
-	await page.getByRole('button', { name: 'Get rid of the sofa' }).click();
+	// First move: get rid of the sofa (free text — no suggestion chips).
+	await say(page, 'Get rid of the sofa');
 	await expect(page.getByText('Gone.', { exact: false })).toBeVisible();
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-removed/);
 
 	// Keep going with the current item: sofa try-ons A then B.
-	await page.getByRole('button', { name: 'Show me sofa options' }).click();
+	await say(page, 'Show me sofa options');
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-a/);
-	await page.getByRole('button', { name: 'Try another sofa' }).click();
+	await say(page, 'Try another sofa');
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-b/);
 
 	// Move on: the first item is settled, so the cost question arrives.
-	await page.getByRole('button', { name: 'Next: the bookcase' }).click();
+	await say(page, 'Next: the bookcase');
 	await expect(page.getByText('which brings us to logistics', { exact: false })).toBeVisible();
 
-	// Cost conscious → the location question, with no presuggested answer.
-	await page.getByRole('button', { name: 'Cost conscious' }).click();
+	// Cost conscious → the location question.
+	await say(page, 'Cost conscious');
 	await expect(page.getByText('where are you', { exact: false })).toBeVisible();
-	await expect(page.getByTestId('suggestions')).toHaveCount(0);
 
 	// Type the location; Kingsland Road gets the nod.
-	await page.getByTestId('chat-input').fill('Dalston');
-	await page.getByTestId('chat-send').click();
+	await say(page, 'Dalston');
 	await expect(page.getByText('Kingsland Road', { exact: false })).toBeVisible();
 
 	// The bookcase: option A, then B.
-	await page.getByRole('button', { name: 'Replace the bookcase' }).click();
+	await say(page, 'Replace the bookcase');
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-bookcase-a/);
-	await page.getByRole('button', { name: 'Try another bookcase' }).click();
+	await say(page, 'Try another bookcase');
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-bookcase-b/);
 
 	// Happy with the room → the Bonhams bust finale, then the journey ends.
-	await page.getByRole('button', { name: /happy with the room/ }).click();
+	await say(page, "I'm happy with the room");
 	await expect(page.getByText('Bonhams', { exact: false })).toBeVisible();
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-bust/);
 	await expect(page.getByTestId('ended')).toBeVisible();
@@ -91,10 +94,9 @@ test('the image pane defaults to a third of the workspace', async ({ page }) => 
 	expect(imagePane!.height).toBeGreaterThan(conversation!.height * 0.4);
 });
 
-test('free text works as well as chips (loose intent matching)', async ({ page }) => {
+test('free text drives the journey via loose intent matching', async ({ page }) => {
 	await page.goto('/workspace');
-	await page.getByTestId('chat-input').fill('please bin that horrible couch');
-	await page.getByTestId('chat-send').click();
+	await say(page, 'please bin that horrible couch');
 	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /journey-sofa-removed/);
 });
 

@@ -47,12 +47,10 @@
 		{#if expanded !== 'image'}
 			<ConversationPane
 				transcript={journey.transcript}
-				suggestions={journey.suggestions}
 				thinking={journey.thinking}
 				{ended}
 				expanded={expanded === 'conversation'}
 				onsend={(t) => journey.send(t)}
-				onpick={(t) => journey.send(t)}
 				ontoggle={() => toggle('conversation')}
 			/>
 		{/if}

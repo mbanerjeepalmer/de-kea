@@ -151,16 +151,3 @@ Go and make something you love.`,
 	nudgeSofa: `No rush. See some sofa options, move on to the **bookcase**, or tell me you're happy with the room.`,
 	nudgeBookcase: `Say *another* to see a different bookcase, or tell me when you're happy with the room.`
 } as const;
-
-/** Suggested-reply chips that seed common inputs into the chat box. */
-export const suggestions = {
-	zapped: ['Get rid of the sofa'],
-	// (a) keep going with the current item, (b) next item, (c) happy with the room
-	sofaRemoved: ['Show me sofa options', 'Next: the bookcase', "I'm happy with the room"],
-	sofaOptions: ['Try another sofa', 'Next: the bookcase', "I'm happy with the room"],
-	cost: ['Cost conscious', 'Happy to splash out'],
-	// The location question deliberately has no chips — the user types where they are.
-	location: [],
-	bookcaseOffer: ['Replace the bookcase', "I'm happy with the room"],
-	bookcaseOptions: ['Try another bookcase', "I'm happy with the room"]
-} as const;

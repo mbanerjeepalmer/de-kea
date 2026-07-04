@@ -43,6 +43,4 @@ export interface Transition {
 	reply: Message[];
 	/** If set, the top image pane swaps to this image. */
 	imagePane?: ImageRef;
-	/** Suggested reply chips to surface after this reply (seed common inputs). */
-	suggestions?: string[];
 }

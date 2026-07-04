@@ -14,7 +14,7 @@
  * unit-testable. The reactive wrapper lives in `store.svelte.ts`.
  */
 import type { ImageRef, Message, StepId, Transition } from './types';
-import { images, copy, suggestions } from '$lib/fixtures/script';
+import { images, copy } from '$lib/fixtures/script';
 
 const norm = (input: string) => input.toLowerCase();
 
@@ -53,13 +53,11 @@ export function start(): {
 	step: StepId;
 	transcript: Message[];
 	imagePane: ImageRef;
-	suggestions: string[];
 } {
 	return {
 		step: 'zapped',
 		transcript: [agentImage(images.zapped), agentText(copy.removalList)],
-		imagePane: images.zapped,
-		suggestions: [...suggestions.zapped]
+		imagePane: images.zapped
 	};
 }
 
@@ -70,8 +68,7 @@ function sofaOption(which: 'sofa-a' | 'sofa-b'): Transition {
 	return {
 		next: which,
 		reply: [agentImage(image), agentText(text)],
-		imagePane: image,
-		suggestions: [...suggestions.sofaOptions]
+		imagePane: image
 	};
 }
 
@@ -82,8 +79,7 @@ function bookcaseOption(which: 'bookcase-a' | 'bookcase-b'): Transition {
 	return {
 		next: which,
 		reply: [agentImage(image), agentText(text)],
-		imagePane: image,
-		suggestions: [...suggestions.bookcaseOptions]
+		imagePane: image
 	};
 }
 
@@ -94,8 +90,7 @@ function bookcaseOption(which: 'bookcase-a' | 'bookcase-b'): Transition {
 function askCost(): Transition {
 	return {
 		next: 'cost',
-		reply: [agentText(copy.costQuestion)],
-		suggestions: [...suggestions.cost]
+		reply: [agentText(copy.costQuestion)]
 	};
 }
 
@@ -121,14 +116,12 @@ export function advance(step: StepId, input: string): Transition {
 				return {
 					next: 'sofa',
 					reply: [agentImage(images.sofaRemoved), agentText(copy.sofaRemoved)],
-					imagePane: images.sofaRemoved,
-					suggestions: [...suggestions.sofaRemoved]
+					imagePane: images.sofaRemoved
 				};
 			}
 			return {
 				next: 'zapped',
-				reply: [agentText(copy.nudgeZapped)],
-				suggestions: [...suggestions.zapped]
+				reply: [agentText(copy.nudgeZapped)]
 			};
 
 		// The sofa stage. Options first, so "show me sofa options" tries a sofa
@@ -139,8 +132,7 @@ export function advance(step: StepId, input: string): Transition {
 			if (wantsOptions(input)) return sofaOption('sofa-a');
 			return {
 				next: 'sofa',
-				reply: [agentText(copy.nudgeSofa)],
-				suggestions: [...suggestions.sofaRemoved]
+				reply: [agentText(copy.nudgeSofa)]
 			};
 
 		case 'sofa-a':
@@ -148,8 +140,7 @@ export function advance(step: StepId, input: string): Transition {
 			if (wantsOptions(input)) return sofaOption('sofa-b');
 			return {
 				next: 'sofa-a',
-				reply: [agentText(copy.nudgeSofa)],
-				suggestions: [...suggestions.sofaOptions]
+				reply: [agentText(copy.nudgeSofa)]
 			};
 
 		case 'sofa-b':
@@ -157,8 +148,7 @@ export function advance(step: StepId, input: string): Transition {
 			if (wantsOptions(input)) return sofaOption('sofa-a');
 			return {
 				next: 'sofa-b',
-				reply: [agentText(copy.nudgeSofa)],
-				suggestions: [...suggestions.sofaOptions]
+				reply: [agentText(copy.nudgeSofa)]
 			};
 
 		// Any answer to the cost question moves on (the script expects "cost
@@ -166,16 +156,14 @@ export function advance(step: StepId, input: string): Transition {
 		case 'cost':
 			return {
 				next: 'location',
-				reply: [agentText(copy.locationQuestion)],
-				suggestions: [...suggestions.location]
+				reply: [agentText(copy.locationQuestion)]
 			};
 
 		// Whatever they type ("Dalston") gets the Kingsland Road recommendation.
 		case 'location':
 			return {
 				next: 'bookcase-offer',
-				reply: [agentText(copy.sourcing)],
-				suggestions: [...suggestions.bookcaseOffer]
+				reply: [agentText(copy.sourcing)]
 			};
 
 		case 'bookcase-offer':
@@ -183,8 +171,7 @@ export function advance(step: StepId, input: string): Transition {
 			if (wantsBookcase(input) || wantsOptions(input)) return bookcaseOption('bookcase-a');
 			return {
 				next: 'bookcase-offer',
-				reply: [agentText(copy.nudgeBookcase)],
-				suggestions: [...suggestions.bookcaseOffer]
+				reply: [agentText(copy.nudgeBookcase)]
 			};
 
 		case 'bookcase-a':
@@ -192,8 +179,7 @@ export function advance(step: StepId, input: string): Transition {
 			if (wantsOptions(input)) return bookcaseOption('bookcase-b');
 			return {
 				next: 'bookcase-a',
-				reply: [agentText(copy.nudgeBookcase)],
-				suggestions: [...suggestions.bookcaseOptions]
+				reply: [agentText(copy.nudgeBookcase)]
 			};
 
 		case 'bookcase-b':
@@ -201,8 +187,7 @@ export function advance(step: StepId, input: string): Transition {
 			if (wantsOptions(input)) return bookcaseOption('bookcase-a');
 			return {
 				next: 'bookcase-b',
-				reply: [agentText(copy.nudgeBookcase)],
-				suggestions: [...suggestions.bookcaseOptions]
+				reply: [agentText(copy.nudgeBookcase)]
 			};
 
 		case 'end':

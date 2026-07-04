@@ -2,22 +2,18 @@
 	import type { Message as Msg } from '$lib/journey/types';
 	import Message from './Message.svelte';
 	import ChatInput from './ChatInput.svelte';
-	import SuggestedReplies from './SuggestedReplies.svelte';
 	import PaneToggle from './PaneToggle.svelte';
 	import { fly } from 'svelte/transition';
 
 	interface Props {
 		transcript: Msg[];
-		suggestions: string[];
 		thinking: boolean;
 		ended: boolean;
 		expanded: boolean;
 		onsend: (text: string) => void;
-		onpick: (text: string) => void;
 		ontoggle: () => void;
 	}
-	let { transcript, suggestions, thinking, ended, expanded, onsend, onpick, ontoggle }: Props =
-		$props();
+	let { transcript, thinking, ended, expanded, onsend, ontoggle }: Props = $props();
 
 	let scroller = $state<HTMLElement>();
 
@@ -59,7 +55,6 @@
 
 	<div class="shrink-0 space-y-3 border-t-2 border-ink px-4 py-4">
 		{#if !ended}
-			<SuggestedReplies {suggestions} {onpick} />
 			<ChatInput {onsend} disabled={thinking} />
 		{:else}
 			<p class="text-center text-sm uppercase tracking-widest text-smoke" data-testid="ended">
