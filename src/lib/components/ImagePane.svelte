@@ -13,8 +13,12 @@
 	let { image, busy = false, expanded, ontoggle }: Props = $props();
 </script>
 
+<!-- Collapsed, the image pane takes a third of the workspace (per v1.1 feedback);
+     expanded, it grows to fill it. -->
 <section
-	class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden halftone bg-paper"
+	class="relative flex min-h-0 items-center justify-center overflow-hidden halftone bg-paper {expanded
+		? 'flex-1'
+		: 'h-1/3 flex-none'}"
 	data-testid="image-pane"
 	aria-label="Current image"
 >

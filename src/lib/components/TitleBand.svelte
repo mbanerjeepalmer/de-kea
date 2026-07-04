@@ -1,5 +1,6 @@
 <script lang="ts">
 	// Thin band above the workspace, per the brief.
+	import IkeaLogo from './IkeaLogo.svelte';
 </script>
 
 <header
@@ -8,5 +9,7 @@
 >
 	<a href="/" class="text-display text-lg tracking-tight text-paper hover:text-accent">DE-KEA</a>
 	<span class="h-4 w-px bg-paper/40" aria-hidden="true"></span>
-	<span class="text-sm uppercase tracking-widest text-paper/70">Interior design without IKEA</span>
+	<span class="text-sm uppercase tracking-widest text-paper/70"
+		>Interior design without <IkeaLogo /></span
+	>
 </header>

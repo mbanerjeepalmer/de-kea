@@ -31,12 +31,11 @@
 </script>
 
 <section
-	class="flex min-h-0 flex-1 flex-col border-t-2 border-ink bg-paper"
+	class="relative flex min-h-0 flex-1 flex-col border-t-2 border-ink bg-paper"
 	data-testid="conversation-pane"
 	aria-label="Conversation"
 >
-	<div class="flex items-center justify-between border-b-2 border-ink px-4 py-2">
-		<h2 class="text-sm font-bold uppercase tracking-widest text-ink">Conversation</h2>
+	<div class="absolute right-3 top-3 z-10">
 		<PaneToggle {expanded} label="conversation" {ontoggle} />
 	</div>
 
