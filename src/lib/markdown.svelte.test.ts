@@ -1,11 +1,11 @@
 /**
  * Runs in the browser project (the `.svelte.` in the filename routes it there)
- * because DOMPurify needs a real DOM to sanitise against.
+ * because `sanitizeUntrusted` needs a real DOM.
  */
 import { describe, it, expect } from 'vitest';
-import { renderMarkdown } from './markdown';
+import { renderMarkdown, sanitizeUntrusted } from './markdown';
 
-describe('renderMarkdown', () => {
+describe('renderMarkdown (trusted fixtures)', () => {
 	it('renders GFM markdown to HTML', () => {
 		const html = renderMarkdown('## Removed\n\n1. A tacky red lamp');
 		expect(html).toContain('<h2>Removed</h2>');
@@ -22,9 +22,20 @@ describe('renderMarkdown', () => {
 		expect(html).not.toContain('<!--');
 	});
 
-	it('sanitises dangerous markup', () => {
-		const html = renderMarkdown('hi <img src=x onerror="alert(1)"> <script>alert(2)<\/script>');
+	it('is deterministic (same output twice — matters for SSR/client hydration)', () => {
+		const md = '## Removed\n\n1. one\n2. **two**';
+		expect(renderMarkdown(md)).toBe(renderMarkdown(md));
+	});
+});
+
+describe('sanitizeUntrusted (live/untrusted path, TODO #3)', () => {
+	it('strips dangerous markup', () => {
+		const html = sanitizeUntrusted('hi <img src=x onerror="alert(1)"> <script>alert(2)<\/script>');
 		expect(html).not.toContain('onerror');
 		expect(html).not.toContain('<script>');
+	});
+
+	it('keeps benign markup', () => {
+		expect(sanitizeUntrusted('<p>hello <strong>world</strong></p>')).toContain('<strong>world</strong>');
 	});
 });

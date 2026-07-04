@@ -31,7 +31,7 @@
 			{#if isUser}
 				<p class="font-medium">{message.markdown}</p>
 			{:else}
-				<!-- Canned, build-time-trusted markdown; sanitised in renderMarkdown. -->
+				<!-- Canned, build-time-trusted markdown; deterministic render (see markdown.ts). -->
 				<div class="prose prose-neutral max-w-none prose-headings:text-display prose-headings:uppercase prose-a:text-accent prose-strong:text-ink">
 					{@html renderMarkdown(message.markdown)}
 				</div>

@@ -1,9 +1,14 @@
 /**
- * Render canned Markdown to sanitised HTML for the conversation pane.
+ * Markdown rendering for the conversation pane.
  *
- * `marked` parses Markdown; `DOMPurify` strips anything that could execute.
- * v1.1 content is trusted (it's committed fixtures), but we sanitise anyway so
- * the same path is safe once live agent output flows through it (TODO #3).
+ * `renderMarkdown` is used for the **canned, build-time-trusted** v1.1 fixtures.
+ * It runs `marked` only, so it is fully deterministic — identical output on the
+ * server and the client — which avoids Svelte hydration mismatches and works on
+ * Cloudflare Workers (where there is no DOM for DOMPurify to run against).
+ *
+ * `sanitizeUntrusted` is the defence-in-depth path for later phases (TODO #3),
+ * when *live* agent output — not authored by us — flows through the same
+ * ConversationPane. It uses DOMPurify and therefore only runs in the browser.
  */
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -18,11 +23,17 @@ function stripAuthoringComments(md: string): string {
 	return md.replace(/<!--[\s\S]*?-->/g, '');
 }
 
+/** Render trusted (canned) Markdown to HTML. Deterministic across SSR + client. */
 export function renderMarkdown(md: string): string {
-	const html = marked.parse(stripAuthoringComments(md), { async: false });
-	// DOMPurify needs a DOM. In the browser (and component tests) we sanitise.
-	// During SSR/prerender there is no window; the fixtures are trusted and the
-	// browser re-render sanitises, so we return the parsed HTML unchanged there.
+	return marked.parse(stripAuthoringComments(md), { async: false }).trim();
+}
+
+/**
+ * Sanitise HTML that originated from untrusted/live sources before it is
+ * injected with `{@html}`. Browser-only (DOMPurify needs a DOM); on the server
+ * it returns the input unchanged, so untrusted content must be rendered client-side.
+ */
+export function sanitizeUntrusted(html: string): string {
 	if (typeof window === 'undefined') return html;
 	return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
 }

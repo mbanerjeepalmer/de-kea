@@ -8,8 +8,12 @@
 
 	let value = $state('');
 
-	function submit(e: SubmitEvent) {
-		e.preventDefault();
+	// A real <form>, per SvelteKit's form guidance. There's no server action here
+	// (the journey is a client-only state machine), so we handle submit on the
+	// client and preventDefault — the "custom event listener" pattern, minus the
+	// server fetch. Enter-to-submit and accessibility come for free from <form>.
+	function submit(event: SubmitEvent) {
+		event.preventDefault();
 		const text = value.trim();
 		if (!text || disabled) return;
 		onsend(text);
@@ -17,7 +21,11 @@
 	}
 </script>
 
-<form class="flex items-stretch gap-0 border-2 border-ink bg-paper-pure" onsubmit={submit} data-testid="chat-form">
+<form
+	class="flex items-stretch gap-0 border-2 border-ink bg-paper-pure"
+	onsubmit={submit}
+	data-testid="chat-form"
+>
 	<input
 		type="text"
 		bind:value
