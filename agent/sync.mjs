@@ -95,7 +95,11 @@ async function main() {
 
 	const prompt = { prompt: systemPrompt, tool_ids: toolIds };
 	if (meta.llm) prompt.llm = meta.llm;
-	const payload = { conversation_config: { agent: { prompt } } };
+	const agent = { prompt };
+	// `first_message` may be set to "" (agent stays silent until the user speaks
+	// — the app opens with the zap critique instead), so only skip when absent.
+	if (meta.first_message !== undefined) agent.first_message = meta.first_message;
+	const payload = { conversation_config: { agent } };
 
 	if (DRY) {
 		console.log(`  [dry-run] agent would get prompt (${systemPrompt.length} chars), llm=${meta.llm}, tool_ids=${JSON.stringify(toolIds)}`);

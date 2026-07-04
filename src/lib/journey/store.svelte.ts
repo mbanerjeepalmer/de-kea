@@ -96,12 +96,13 @@ export class Journey {
 			this.imagePane = zapped;
 			this.transcript = [agentImage(zapped), agentText(zap.critique ?? copy.removalList)];
 
+			// NB overrides here must be whitelisted in the agent's security settings
+			// or ElevenLabs closes the socket: text_only is; first_message is NOT
+			// (the agent's own first message is set to "" via agent/sync instead).
 			this.session = await Conversation.startSession({
 				signedUrl,
 				textOnly: true,
 				overrides: {
-					// The zap critique IS the opening message; don't greet twice.
-					agent: { firstMessage: '' },
 					conversation: { textOnly: true }
 				},
 				clientTools: {

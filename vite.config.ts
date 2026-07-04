@@ -5,6 +5,13 @@ import adapter from '@sveltejs/adapter-cloudflare';
 import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
+	server: {
+		watch: {
+			// Agent worktrees live inside the repo; without this the dev server
+			// full-reloads every time another session builds in one.
+			ignored: ['**/.claude/**']
+		}
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({
