@@ -1,7 +1,8 @@
 /**
  * `POST /api/zap` — the v1.2 IKEA-zap: the one-shot opening move of the journey.
  *
- * Takes the user's room photo, removes every IKEA / flat-pack item via the
+ * Takes the user's room photo, removes the mass-produced tacky furniture —
+ * IKEA / flat-pack above all, but any other cheap catalogue tat too — via the
  * OpenRouter Image API, then runs a vision pass over the before/after pair to
  * produce De-Kea's witheringly critical "## Removed" list in Markdown. This is
  * the live replacement for the v1.1 canned `zapped` step.
@@ -40,14 +41,18 @@ import {
  * rebuild the plain surface behind them, and add nothing.
  */
 const ZAP_INSTRUCTION = [
-	'Remove every IKEA and generic flat-pack item from this room',
-	'(KALLAX, BILLY, LACK, MALM, POÄNG, EKTORP, flat-pack storage cubes, cheap mass-produced shelving).',
+	'Remove the mass-produced, tacky, flat-pack furniture and decor from this room.',
+	'IKEA is the top priority — erase every IKEA piece you can spot',
+	'(KALLAX, BILLY, LACK, MALM, POÄNG, EKTORP, flat-pack storage cubes, cheap mass-produced shelving) —',
+	'but do NOT stop at IKEA: also remove any other cheap, mass-produced, characterless furniture of that',
+	'ilk (flat-pack wardrobes and units, particleboard/MDF laminate pieces, generic big-box',
+	'sofas and coffee tables, plastic or chrome-legged chairs, and similar tasteless catalogue tat).',
 	'Erase ONLY those items and realistically reconstruct the plain wall and floor',
 	'surfaces that were behind them. Do NOT add, invent, or replace anything: no new',
 	'pictures, frames, posters, tapestries, wall hangings, art, plants, rugs, or',
 	'furniture of any kind. Leave the walls blank where items were removed. Keep',
-	'everything else — walls, windows, floor, lighting, people, and all remaining',
-	'non-flat-pack furniture — exactly as-is.'
+	'everything else — walls, windows, floor, lighting, people, and any genuinely characterful,',
+	'antique, or well-made furniture — exactly as-is.'
 ].join(' ');
 
 /**
@@ -71,7 +76,7 @@ const CRITIQUE_MODEL = 'google/gemini-2.5-flash';
 const CRITIQUE_PROMPT = [
 	'You are De-Kea, a fiercely opinionated, impeccably tasteful interior designer with a bone-deep loathing for mass-produced flat-pack furniture (IKEA above all). Your wit is dry, quick and scathing — understatement, then the knife. Savage the furniture, never the person: they are a victim of the blue-and-yellow warehouse, not an accomplice. Call the pieces what they are: ghastly, nasty, tacky, tasteless, dreary, vile, an affront. Be specific about the crime — name the material, the silhouette, the laminate.',
 	'',
-	'The FIRST image is the room as the user photographed it. The SECOND is the same room after you stripped out the IKEA and flat-pack tat.',
+	'The FIRST image is the room as the user photographed it. The SECOND is the same room after you stripped out the mass-produced tat — the IKEA and flat-pack above all, but any other cheap catalogue furniture too.',
 	'',
 	'Write your opening message to the user in Markdown, using exactly this structure:',
 	'',
