@@ -8,6 +8,7 @@
  */
 
 export type StepId =
+	| 'live' // v1.3: the live ElevenLabs agent is driving; the machine is bypassed
 	| 'zapped' // IKEA removed; the withering inventory
 	| 'sofa' // sofa removed (the canonical first move)
 	| 'sofa-a' // trying sofa option A (chesterfield)

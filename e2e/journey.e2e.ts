@@ -1,10 +1,21 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
- * The canned v1.2 walkthrough. The journey starts at /workspace (the zap has
- * "already happened" by the time we land); homepage/camera entry is covered
- * by the UX thread's tests. Fully offline — no network mocks needed.
+ * The canned walkthrough. Since v1.3 the workspace tries to go LIVE first
+ * (ElevenLabs agent + real image edits) — and `wrangler pages dev` loads
+ * `.env`, so in a keyed-up checkout the preview would happily spend real
+ * money. Every test therefore stubs the session mint to fail, forcing the
+ * deterministic canned fallback; the live path is exercised manually.
  */
+async function forceCanned(page: Page) {
+	await page.route('**/api/agent-session', (route) =>
+		route.fulfill({ status: 503, json: { message: 'e2e: live disabled' } })
+	);
+}
+
+test.beforeEach(async ({ page }) => {
+	await forceCanned(page);
+});
 test('the journey: zap → sofa → cost → Dalston → Kingsland Road → bookcase → bust', async ({
 	page
 }) => {

@@ -8,6 +8,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import { storeRoomPhoto, clearRoomPhoto, frameToDataUri } from '$lib/journey/photo';
 
 	interface Props {
 		/** Fired when the user presses the shutter (or the no-camera fallback fires). */
@@ -39,10 +40,12 @@
 			.catch(() => {
 				if (cancelled) return;
 				failed = true;
+				clearRoomPhoto();
 				fallbackTimer = setTimeout(oncapture, 1600);
 			});
 		if (!navigator.mediaDevices) {
 			failed = true;
+			clearRoomPhoto();
 			fallbackTimer = setTimeout(oncapture, 1600);
 		}
 
@@ -60,6 +63,11 @@
 
 	function shutter() {
 		flashing = true;
+		// The live flow zaps this exact frame; if the grab fails we fall back to
+		// the demo room rather than a stale capture.
+		const frame = video ? frameToDataUri(video) : null;
+		if (frame) storeRoomPhoto(frame);
+		else clearRoomPhoto();
 		stop();
 		setTimeout(oncapture, 180);
 	}

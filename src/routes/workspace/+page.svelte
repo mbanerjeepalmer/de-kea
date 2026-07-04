@@ -1,11 +1,21 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { Journey } from '$lib/journey/store.svelte';
 	import TitleBand from '$lib/components/TitleBand.svelte';
 	import ImagePane from '$lib/components/ImagePane.svelte';
 	import ConversationPane from '$lib/components/ConversationPane.svelte';
 
-	// The canned journey starts at the zapped state the moment we land here.
+	// Live-first: init() zaps the real photo and hands the conversation to the
+	// ElevenLabs agent, degrading to the canned walkthrough if the live stack
+	// is unreachable.
 	const journey = new Journey();
+
+	onMount(() => {
+		journey.init();
+		return () => {
+			journey.dispose();
+		};
+	});
 
 	// Which pane, if any, is expanded to fill the workspace.
 	let expanded = $state<'none' | 'image' | 'conversation'>('none');
@@ -28,6 +38,7 @@
 		{#if expanded !== 'conversation'}
 			<ImagePane
 				image={journey.imagePane}
+				busy={journey.zapping}
 				expanded={expanded === 'image'}
 				ontoggle={() => toggle('image')}
 			/>

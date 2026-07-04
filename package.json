@@ -36,6 +36,7 @@
 		"wrangler": "^4.97.0"
 	},
 	"dependencies": {
+		"@elevenlabs/client": "^1.14.0",
 		"dompurify": "^3.4.11",
 		"marked": "^18.0.5"
 	}
