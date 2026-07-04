@@ -41,25 +41,32 @@ import {
 const VISION_MODEL = 'google/gemini-2.5-flash';
 
 /**
- * Describe the edited room so the agent can "see" it: a one-line overview then
- * a short bulleted list of items with their positions (kept compact so it
- * doesn't bloat the agent's context on every edit). Deliberately observational,
- * not judgemental — the De-Kea persona supplies the withering verdict; this
- * supplies the facts to hang it on, including naming any recognisable IKEA
- * products (the whole conceit — see the fixtures' "BILLY bookcase" line).
- * Best-effort: if the vision call fails, the edit still succeeds and we return
- * `null` rather than failing the whole request.
+ * Describe the edited room so the agent can "see" it: a one-line verdict on
+ * whether the requested edit actually happened, then a one-line overview and a
+ * short bulleted list of items with their positions (kept compact so it
+ * doesn't bloat the agent's context on every edit). The verdict line exists
+ * because the edit models sometimes no-op — e.g. asked to remove a sofa that
+ * isn't in the photo — and silently return the room essentially unchanged;
+ * without an explicit check the agent has no way to know and will happily
+ * congratulate the user on a change that never happened. Best-effort: if the
+ * vision call fails, the edit still succeeds and we return `null` rather than
+ * failing the whole request.
  */
-const DESCRIBE_PROMPT = [
-	'Describe this room for an interior designer who will critique it. Use exactly this structure:',
-	'',
-	'First, ONE single-sentence line giving the overall room: its general style, lighting, and feel.',
-	'',
-	'Then a bulleted list of the notable furniture and objects (roughly 6-12 items, most prominent first). ONE line per item, in the form: "<item> — <key material/colour> — <position in the room>". Position means where it sits (e.g. "left wall", "under the window", "centre, between the chair and sofa").',
-	'If an item looks like a recognisable IKEA product, append its product/range name and confidence, e.g. "(IKEA BILLY, high confidence)"; for other IKEA ranges think KALLAX, POÄNG, LACK, MALM, HEMNES, EKTORP/KLIPPAN, RANARP. If it just reads as generic flat-pack, say "(generic flat-pack)".',
-	'',
-	'Report only what is visible. Be concise and observational — no opinions, ratings, or recommendations; the designer supplies the judgement.'
-].join('\n');
+function describePrompt(instruction: string): string {
+	return [
+		`The instruction just attempted on this room's previous photo was: "${instruction}".`,
+		'First, ONE line starting exactly "Edit outcome:" stating plainly whether that instruction is actually reflected in the image below — done / partially done / not done (e.g. the target wasn\'t present, or the model made no visible change) — and why, in a few words. Do not assume it worked; look for the specific thing that was meant to change.',
+		'',
+		'Then describe the room for an interior designer who will critique it. Use exactly this structure:',
+		'',
+		'ONE single-sentence line giving the overall room: its general style, lighting, and feel.',
+		'',
+		'Then a bulleted list of the notable furniture and objects (roughly 6-12 items, most prominent first). ONE line per item, in the form: "<item> — <key material/colour> — <position in the room>". Position means where it sits (e.g. "left wall", "under the window", "centre, between the chair and sofa").',
+		'If an item looks like a recognisable IKEA product, append its product/range name and confidence, e.g. "(IKEA BILLY, high confidence)"; for other IKEA ranges think KALLAX, POÄNG, LACK, MALM, HEMNES, EKTORP/KLIPPAN, RANARP. If it just reads as generic flat-pack, say "(generic flat-pack)".',
+		'',
+		'Report only what is visible. Be concise and observational — no opinions, ratings, or recommendations beyond the edit-outcome line; the designer supplies the judgement.'
+	].join('\n');
+}
 
 interface EditRequest {
 	instruction?: unknown;
@@ -97,7 +104,7 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 	const edited = await editImage(fetch, apiKey, { model, instruction, image });
 	const description = await visionText(fetch, apiKey, {
 		model: VISION_MODEL,
-		prompt: DESCRIBE_PROMPT,
+		prompt: describePrompt(instruction),
 		images: [edited.image]
 	});
 

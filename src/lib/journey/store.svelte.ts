@@ -132,7 +132,9 @@ export class Journey {
 				].join('\n')
 			);
 
-			this.suggestions = [...chips.zapped];
+			// No canned chips here: `chips.zapped` ("Get rid of the sofa") assumes the
+			// demo room's specific furniture. The live critique already names a real
+			// next-move candidate in its closing line — the user replies free-text.
 		} catch {
 			await this.teardownSession();
 			this.resetCanned();
