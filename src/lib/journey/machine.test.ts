@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { start, advance, detectLampStyle, wantsSofaGone, isDone } from './machine';
-import { images, lampRenders, copy, suggestions } from '$lib/fixtures/script';
+import { advance, detectLampStyle, wantsSofaGone, isDone, lampEdits } from './machine';
+import { copy, suggestions } from '$lib/fixtures/script';
 
 describe('intent heuristics', () => {
 	describe('wantsSofaGone', () => {
@@ -46,76 +46,72 @@ describe('intent heuristics', () => {
 	});
 });
 
-describe('start()', () => {
-	it('opens at the zapped step with the removal list and the after image', () => {
-		const s = start();
-		expect(s.step).toBe('zapped');
-		expect(s.imagePane).toEqual(images.zapped);
-		// transcript: the zapped image then the withering removal list
-		expect(s.transcript[0]).toEqual({ role: 'agent', kind: 'image', image: images.zapped });
-		expect(s.transcript[1]).toEqual({ role: 'agent', kind: 'text', markdown: copy.removalList });
-		expect(s.suggestions).toEqual([...suggestions.zapped]);
-	});
-});
-
 describe('advance() — zapped', () => {
-	it('removes the sofa on a matching request', () => {
+	it('returns a committing sofa-removal edit on a matching request', () => {
 		const t = advance('zapped', 'Also get rid of the sofa');
 		expect(t.next).toBe('replace-sofa');
-		expect(t.imagePane).toEqual(images.noSofa);
-		expect(t.reply[0]).toEqual({ role: 'agent', kind: 'image', image: images.noSofa });
-		expect(t.reply[1]).toEqual({ role: 'agent', kind: 'text', markdown: copy.sofaRemoved });
+		expect(t.edit).toBeDefined();
+		expect(t.edit!.instruction).toMatch(/remove the sofa/i);
+		// Removing the sofa permanently changes the room later edits build on.
+		expect(t.edit!.commit).toBe(true);
+		expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.sofaRemoved }]);
 		expect(t.suggestions).toEqual([...suggestions.replaceSofa]);
 	});
 
-	it('nudges (staying put) when the input does not match', () => {
+	it('nudges (staying put, no edit) when the input does not match', () => {
 		const t = advance('zapped', 'wow nice');
 		expect(t.next).toBe('zapped');
-		expect(t.imagePane).toBeUndefined();
+		expect(t.edit).toBeUndefined();
 		expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.nudgeZapped }]);
 	});
 });
 
 describe('advance() — replace-sofa', () => {
-	it('renders a chosen lamp style and updates the image pane', () => {
+	it('returns a non-committing lamp render for a chosen style', () => {
 		const t = advance('replace-sofa', 'modern please');
 		expect(t.next).toBe('style-lamp');
-		expect(t.imagePane).toEqual(lampRenders.modern);
-		expect(t.reply[0]).toEqual({ role: 'agent', kind: 'image', image: lampRenders.modern });
-		expect(t.reply[1]).toEqual({ role: 'agent', kind: 'text', markdown: copy.lamp.modern });
+		expect(t.edit).toEqual({ ...lampEdits.modern, commit: false });
+		expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.lamp.modern }]);
 		expect(t.suggestions).toEqual([...suggestions.styleLamp]);
 	});
 
 	it('nudges toward a style when input is unclear', () => {
 		const t = advance('replace-sofa', 'hmm');
 		expect(t.next).toBe('replace-sofa');
+		expect(t.edit).toBeUndefined();
 		expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.nudgeStyle }]);
 	});
 });
 
 describe('advance() — style-lamp', () => {
-	it('lets the user try another style in place', () => {
+	it('lets the user try another style in place (still non-committing)', () => {
 		const t = advance('style-lamp', 'try retro');
 		expect(t.next).toBe('style-lamp');
-		expect(t.imagePane).toEqual(lampRenders.retro);
-		expect(t.reply[1]).toEqual({ role: 'agent', kind: 'text', markdown: copy.lamp.retro });
+		expect(t.edit).toEqual({ ...lampEdits.retro, commit: false });
+		expect(t.reply[0]).toEqual({ role: 'agent', kind: 'text', markdown: copy.lamp.retro });
 	});
 
 	it('prefers trying a style over ending, even when "love" appears', () => {
 		const t = advance('style-lamp', 'I love the retro one');
 		expect(t.next).toBe('style-lamp');
-		expect(t.imagePane).toEqual(lampRenders.retro);
+		expect(t.edit).toEqual({ ...lampEdits.retro, commit: false });
 	});
 
 	it('ends when the user is happy', () => {
 		const t = advance('style-lamp', "I love it — I'm done");
 		expect(t.next).toBe('end');
 		expect(t.reply).toEqual([{ role: 'agent', kind: 'text', markdown: copy.end }]);
-		expect(t.imagePane).toBeUndefined();
+		expect(t.edit).toBeUndefined();
 	});
 });
 
-describe('advance() — end (terminal)', () => {
+describe('advance() — zapping & terminal steps', () => {
+	it('stays at zapping (the store owns the retry)', () => {
+		const t = advance('zapping', 'try again');
+		expect(t.next).toBe('zapping');
+		expect(t.reply).toEqual([]);
+	});
+
 	it('stays at end', () => {
 		const t = advance('end', 'anything');
 		expect(t.next).toBe('end');

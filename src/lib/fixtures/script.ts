@@ -1,66 +1,82 @@
 /**
- * The single source of truth for the DE-KEA v1.1 hardcoded walkthrough.
+ * The scripted copy and demo imagery for the DE-KEA journey.
  *
- * Everything the "agent" says or shows lives here. Later phases (TODO #2/#3)
- * replace these fixtures with live ElevenLabs / OpenRouter output behind the
- * same `Transition` interface — the machine and UI never need to change.
+ * Since v1.2 the room images are LIVE (edited from the user's actual photo via
+ * `/api/zap` and `/api/edit-image`), so this file no longer scripts the whole
+ * walkthrough — it holds:
+ *   - the homepage demo imagery (the committed IKEA-heavy room + its zap),
+ *   - the canned conversation copy for the scripted steps (live agent copy is
+ *     TODO #3 / v1.3), and
+ *   - fallback/error copy for when the live calls fail.
  */
-import type { ImageRef, LampStyle } from '$lib/journey/types';
+import type { LampStyle } from '$lib/journey/types';
 
-export const images = {
-	/** The space the user "photographed" — full of IKEA. */
-	before: {
-		src: '/images/before.jpg',
-		alt: 'A busy open-plan office with an IKEA KALLAX cube shelf and framed posters on the walls.'
+/**
+ * Homepage demo: the whole product story in stills — the committed IKEA-heavy
+ * room, its real `/api/zap` output, then the item-by-item redesign. Stages
+ * after the zap are authored by `scripts/generate-images.mjs` (chained edits).
+ */
+export const demoStages = [
+	{
+		src: '/images/ikea-room.png',
+		alt: 'A living room crowded with IKEA furniture — KALLAX shelving, a POÄNG chair, BILLY bookcases and framed posters.',
+		label: 'Before'
 	},
-	/** IKEA removed. */
-	zapped: {
-		src: '/images/zapped.png',
-		alt: 'The same office with the IKEA KALLAX shelf and wall posters removed.'
+	{
+		src: '/images/ikea-room-zapped.jpg',
+		alt: 'The same living room with every IKEA item stripped out.',
+		label: 'IKEA removed'
 	},
-	/** IKEA removed and the sofa gone too. */
-	noSofa: {
-		src: '/images/no-sofa.png',
-		alt: 'The office with the IKEA and the black sofa removed, leaving clean open space.'
+	{
+		src: '/images/demo-bookcase.png',
+		alt: 'The room with an antique dark-oak bookcase with glazed doors.',
+		label: 'New bookcase'
+	},
+	{
+		src: '/images/demo-sofa.png',
+		alt: 'The room with a vintage tan leather chesterfield sofa.',
+		label: 'New sofa'
+	},
+	{
+		src: '/images/demo-table.png',
+		alt: 'The room with a mid-century teak coffee table.',
+		label: 'New table'
+	},
+	{
+		src: '/images/demo-chair.png',
+		alt: 'The finished room, with a deep green wingback armchair.',
+		label: 'New chair'
 	}
-} as const satisfies Record<string, ImageRef>;
-
-export const lampRenders: Record<LampStyle, ImageRef> = {
-	modern: {
-		src: '/images/lamp-modern.png',
-		alt: 'The space re-imagined with a sleek modern floor lamp.'
-	},
-	retro: {
-		src: '/images/lamp-retro.png',
-		alt: 'The space re-imagined with a warm retro tripod lamp.'
-	},
-	classic: {
-		src: '/images/lamp-classic.png',
-		alt: 'The space re-imagined with an elegant classic column lamp.'
-	}
-};
+] as const;
 
 /**
  * Canned Markdown copy. Witheringly critical, per the brief.
- * `<!-- v1.4 -->` lines depend on web browsing and are hardcoded for now.
+ *
+ * Note: the v1.1 hardcoded "What's your postcode?" recycling-centre line is
+ * gone — per docs/v1.md it is removed for v1.2/v1.3 and returns in v1.4 with
+ * real web browsing.
  */
 export const copy = {
-	/** Opening removal list shown the moment the workspace loads (the "zap"). */
-	removalList: `## Removed
+	/**
+	 * Fallback removal list, used only when `/api/zap` returns no critique
+	 * (the zapped image still shows; this copy stays deliberately generic).
+	 */
+	zapFallback: `## Removed
 
-1. That white **KALLAX** cube shelf, smugly displaying its little trinkets.
-2. The framed posters gamely trying to give the wall a personality.
-3. The flat-pack clutter nobody will miss.
+Every last flat-pack offender — shelving units bought by the metre, posters pretending to be art, and assorted cardboard-adjacent clutter.
 
 Honestly, it's a relief. The room can breathe now.
 
-<!-- v1.4: requires the web-search subagent; hardcoded for v1.1. -->
-What's your postcode? I'll find your nearest recycling centre.
+Now — tell me what else should go. That **sofa**, perhaps?`,
 
-Then we can start designing a space that is tasteful — one you're actually **proud** of.`,
+	/** When the zap call itself fails. */
+	zapError: `Hm. My scalpel slipped — I couldn't process that photo. Give it another go, or try a different shot (landscape, decent light).`,
+
+	/** When a follow-up edit fails. */
+	editError: `That edit didn't take — even good taste has off days. Say it again and I'll have another go.`,
 
 	/** After the user asks to also lose the sofa. */
-	sofaRemoved: `Gone. That black flat-pack sofa was doing you no favours — stuffing masquerading as comfort.
+	sofaRemoved: `Gone. That sofa was doing you no favours — stuffing masquerading as comfort.
 
 Now, let's give the space some character. Start with light: what kind of **lamp** speaks to you — *modern*, *retro*, or *classic*?`,
 
@@ -74,7 +90,7 @@ Now, let's give the space some character. Start with light: what kind of **lamp*
 	/** Terminal wrap-up. */
 	end: `Beautiful. That's a room with a point of view.
 
-<!-- v1.4: sourcing suggestions require web browsing; hardcoded for v1.1. -->
+<!-- v1.4: sourcing suggestions require web browsing; hardcoded until then. -->
 There's a **British Heart Foundation** two streets over with a genuinely good mid-century lamp in the window right now. Failing that: eBay, Gumtree, Freecycle, and Saturday's street market are all better ideas than another trip to the big blue shed.
 
 Go and make something you love.`,
@@ -88,5 +104,6 @@ Go and make something you love.`,
 export const suggestions = {
 	zapped: ['Also get rid of the sofa'],
 	replaceSofa: ['Modern', 'Retro', 'Classic'],
-	styleLamp: ['Try retro', 'Try classic', "I love it — I'm done"]
+	styleLamp: ['Try retro', 'Try classic', "I love it — I'm done"],
+	zapFailed: ['Try again']
 } as const;

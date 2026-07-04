@@ -1,0 +1,106 @@
+/**
+ * `POST /api/zap` — the v1.2 IKEA-zap: the one-shot opening move of the journey.
+ *
+ * Takes the user's room photo, removes every IKEA / flat-pack item via the
+ * OpenRouter Image API, then runs a vision pass over the before/after pair to
+ * produce De-Kea's witheringly critical "## Removed" list in Markdown. This is
+ * the live replacement for the v1.1 canned `zapped` step.
+ *
+ * Unlike `/api/edit-image` (a neutral tool for the ElevenAgent, which supplies
+ * its own judgement — TODO #3), this endpoint owns the whole zap experience
+ * server-side because in v1.2 there is no agent in the loop yet: the scripted
+ * journey machine drives the conversation and needs the critique ready-made.
+ *
+ * The v1.1 hardcoded "What's your postcode?" recycling line is deliberately
+ * absent — per docs/v1.md it is removed for v1.2/v1.3 and returns in v1.4 with
+ * real web browsing.
+ *
+ * Request  JSON: { image: string (data URI or https URL), model?: string }
+ * Response JSON: { image: string (data URI), critique: string | null (Markdown),
+ *                  model: string, cost: number | null }
+ */
+import { env } from '$env/dynamic/private';
+import { json, error } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import {
+	ALLOWED_EDIT_MODELS,
+	DEFAULT_EDIT_MODEL,
+	editImage,
+	isReferenceUrl,
+	visionText
+} from '$lib/server/openrouter';
+
+/** The zap itself: one broad, surgical removal instruction. */
+const ZAP_INSTRUCTION = [
+	'Remove every IKEA and generic flat-pack item from this room: IKEA furniture',
+	'(think KALLAX, BILLY, LACK, MALM, POÄNG, EKTORP), cheap mass-produced shelving,',
+	'flat-pack storage cubes, and generic framed posters/prints in thin frames.',
+	'Leave the walls, windows, floor, lighting, people, and all non-flat-pack',
+	'furniture exactly as they are. Fill the vacated space naturally so the room',
+	'looks like those items were never there.'
+].join(' ');
+
+/** Vision model for the critique pass — needs taste, not muscle. */
+const CRITIQUE_MODEL = 'google/gemini-2.5-flash';
+
+/**
+ * The critique compares before and after, so it lists what actually left the
+ * room rather than guessing from the result. Voice-matched to the De-Kea
+ * persona (agent/de-kea.system.md): withering about the furniture, never the
+ * person, and always ending on the next move.
+ */
+const CRITIQUE_PROMPT = [
+	'You are De-Kea, a fiercely opinionated, impeccably tasteful interior designer with a particular loathing for mass-produced flat-pack furniture (IKEA above all). Dry British wit; mock the furniture, never the person.',
+	'',
+	'The FIRST image is the room as the user photographed it. The SECOND is the same room after you stripped out the IKEA and flat-pack tat.',
+	'',
+	'Write your opening message to the user in Markdown, using exactly this structure:',
+	'',
+	'A "## Removed" heading, then a numbered list of the items that are present in the first image but gone from the second (compare carefully; list only real differences). One line each: name the item — with its IKEA product name if recognisable (BILLY, KALLAX, POÄNG, LACK...) — followed by one witheringly funny remark about it.',
+	'',
+	'Then a single short paragraph of relief at how the room breathes now, ending by inviting the next move: getting rid of something else that remains (pick the most deserving candidate you can actually see in the second image, e.g. a tired sofa).',
+	'',
+	'Keep it tight and quotable — no preamble, no sign-off, nothing outside that structure.'
+].join('\n');
+
+interface ZapRequest {
+	image?: unknown;
+	model?: unknown;
+}
+
+export const POST: RequestHandler = async ({ request, fetch }) => {
+	const apiKey = env.OPENROUTER_API_KEY;
+	if (!apiKey) {
+		throw error(500, 'OPENROUTER_API_KEY is not configured on the server.');
+	}
+
+	let body: ZapRequest;
+	try {
+		body = await request.json();
+	} catch {
+		throw error(400, 'Request body must be JSON.');
+	}
+
+	const image = typeof body.image === 'string' ? body.image.trim() : '';
+	const model = typeof body.model === 'string' && body.model ? body.model : DEFAULT_EDIT_MODEL;
+
+	if (!image) throw error(400, 'Missing "image": a data URI or https URL of the room photo.');
+	if (!isReferenceUrl(image)) {
+		throw error(400, '"image" must be a data:image/* URI or an https:// URL.');
+	}
+	if (!ALLOWED_EDIT_MODELS.has(model)) {
+		throw error(400, `Unsupported model "${model}". Allowed: ${[...ALLOWED_EDIT_MODELS].join(', ')}.`);
+	}
+
+	const edited = await editImage(fetch, apiKey, { model, instruction: ZAP_INSTRUCTION, image });
+
+	// Best-effort: a null critique means the client falls back to generic copy;
+	// the zapped image is the thing that must not fail.
+	const critique = await visionText(fetch, apiKey, {
+		model: CRITIQUE_MODEL,
+		prompt: CRITIQUE_PROMPT,
+		images: [image, edited.image]
+	});
+
+	return json({ image: edited.image, critique, model, cost: edited.cost });
+};

@@ -5,10 +5,12 @@
 
 	interface Props {
 		image: ImageRef | null;
+		/** True while the live zap is running — shows the scan treatment. */
+		busy?: boolean;
 		expanded: boolean;
 		ontoggle: () => void;
 	}
-	let { image, expanded, ontoggle }: Props = $props();
+	let { image, busy = false, expanded, ontoggle }: Props = $props();
 </script>
 
 <section
@@ -31,4 +33,27 @@
 			/>
 		{/key}
 	{/if}
+
+	{#if busy}
+		<div class="pointer-events-none absolute inset-0" data-testid="image-pane-busy" transition:fade={{ duration: 200 }}>
+			<div class="zap-scan absolute inset-y-0 w-1 bg-accent shadow-[0_0_24px_6px_var(--color-accent)]"></div>
+			<span class="absolute bottom-3 left-3 bg-ink px-2 py-1 text-xs font-bold uppercase tracking-widest text-paper">
+				Zapping the IKEA…
+			</span>
+		</div>
+	{/if}
 </section>
+
+<style>
+	.zap-scan {
+		left: 0;
+		animation: zap-scan 2.4s ease-in-out infinite alternate;
+	}
+	@keyframes zap-scan {
+		from { left: 0; }
+		to { left: calc(100% - 0.25rem); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.zap-scan { display: none; }
+	}
+</style>
