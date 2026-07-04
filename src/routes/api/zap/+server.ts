@@ -56,13 +56,16 @@ const ZAP_INSTRUCTION = [
 ].join(' ');
 
 /**
- * The zap runs once, unattended, on the user's real photo — quality matters more
- * than speed/cost here, so it defaults to Pro (Nano Banana Pro), which does
- * markedly cleaner localised removals and preserves people/geometry far better
- * than Flash. The neutral `/api/edit-image` agent tool keeps the cheaper Flash
- * default; a caller may still override via the `model` field.
+ * The zap runs once, unattended, on the user's real photo. It previously
+ * defaulted to Pro (Nano Banana Pro) for the cleanest removals, but Pro is the
+ * slowest tier and the zap was the journey's biggest latency spike — so it now
+ * uses Flash (Nano Banana 2), which is markedly faster while still doing a
+ * strong localised removal. (The subtractive edit is fairly forgiving; if a
+ * photo with people in it needs Pro's better geometry/identity preservation, a
+ * caller may override via the `model` field.) The neutral `/api/edit-image`
+ * agent tool already defaults to this same Flash model.
  */
-const ZAP_MODEL = 'google/gemini-3-pro-image';
+const ZAP_MODEL = 'google/gemini-3.1-flash-image';
 
 /** Vision model for the critique pass — needs taste, not muscle. */
 const CRITIQUE_MODEL = 'google/gemini-2.5-flash';
