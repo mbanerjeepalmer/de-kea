@@ -105,7 +105,10 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 		throw error(502, `OpenRouter image edit failed (${upstream.status}). ${detail.slice(0, 500)}`);
 	}
 
-	const result = await upstream.json();
+	const result = (await upstream.json()) as {
+		data?: { b64_json?: string }[];
+		usage?: { cost?: number };
+	};
 	const b64: string | undefined = result?.data?.[0]?.b64_json;
 	if (!b64) {
 		throw error(502, 'OpenRouter returned no image data.');

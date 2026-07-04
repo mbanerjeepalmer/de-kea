@@ -13,7 +13,7 @@
 		'group inline-flex items-center gap-3 px-8 py-4 text-lg font-bold uppercase tracking-tight transition-colors duration-200 select-none';
 	const solid = 'bg-ink text-paper hover:bg-accent hover:text-paper-pure';
 	const outline = 'border-2 border-ink text-ink hover:bg-ink hover:text-paper';
-	const cls = `${base} ${variant === 'solid' ? solid : outline}`;
+	const cls = $derived(`${base} ${variant === 'solid' ? solid : outline}`);
 </script>
 
 {#if href}
