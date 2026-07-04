@@ -13,7 +13,8 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright install && playwright test",
-		"gen": "wrangler types"
+		"gen": "wrangler types",
+		"agent:sync": "node agent/sync.mjs"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.60.0",

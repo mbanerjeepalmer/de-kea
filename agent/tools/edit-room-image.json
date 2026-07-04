@@ -1,0 +1,19 @@
+{
+  "type": "client",
+  "name": "edit_room_image",
+  "description": "Apply a single visual edit to the room photo currently on screen \u2014 remove an object (sofa, lamp, bookcase), replace one, or render a new item (e.g. a floor lamp in a given style). Call this whenever the user asks to change how the room LOOKS. The current photo is supplied by the app automatically; you only provide the edit instruction. The edited image is shown to the user and added to the conversation. The tool RETURNS a plain-text description of what the room looks like after the edit \u2014 read it and base your critique on it, because it reflects the real result, not your assumptions.",
+  "expects_response": true,
+  "response_timeout_secs": 45,
+  "parameters": {
+    "type": "object",
+    "required": [
+      "instruction"
+    ],
+    "properties": {
+      "instruction": {
+        "type": "string",
+        "description": "A concise, self-contained description of the single edit to make to the current room photo, phrased as an imperative. Examples: 'Remove the sofa, keeping everything else identical.' 'Add a sleek modern brass floor lamp in the corner.'"
+      }
+    }
+  }
+}

@@ -17,8 +17,14 @@
  *     text acknowledgement — see the architecture note in
  *     docs/image-api-investigation.md §4.
  *
+ * After the edit, a cheap vision pass describes the *resulting* room in plain
+ * text. That description — not the pixels — is what the client returns to the
+ * agent as the tool result, so the ElevenAgent can critique what the room
+ * actually looks like now without any image bytes entering its LLM context.
+ *
  * Request  JSON: { instruction: string, image: string (data URI or https URL), model?: string }
- * Response JSON: { image: string (data URI), model: string, cost: number | null }
+ * Response JSON: { image: string (data URI), model: string, cost: number | null,
+ *                  description: string | null }
  */
 import { env } from '$env/dynamic/private';
 import { json, error } from '@sveltejs/kit';
@@ -36,6 +42,64 @@ const ALLOWED_MODELS = new Set([
 ]);
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/images';
+const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+/** Cheap multimodal model used only to turn the edited room into a text description. */
+const VISION_MODEL = 'google/gemini-2.5-flash';
+
+/**
+ * Describe the edited room so the agent can "see" it: a one-line overview then
+ * a short bulleted list of items with their positions (kept compact so it
+ * doesn't bloat the agent's context on every edit). Deliberately observational,
+ * not judgemental — the De-Kea persona supplies the withering verdict; this
+ * supplies the facts to hang it on, including naming any recognisable IKEA
+ * products (the whole conceit — see the fixtures' "BILLY bookcase" line).
+ * Best-effort: if the vision call fails, the edit still succeeds and we return
+ * `null` rather than failing the whole request.
+ */
+async function describeRoom(
+	imageDataUri: string,
+	fetch: typeof globalThis.fetch,
+	apiKey: string
+): Promise<string | null> {
+	try {
+		const res = await fetch(OPENROUTER_CHAT_URL, {
+			method: 'POST',
+			headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				model: VISION_MODEL,
+				messages: [
+					{
+						role: 'user',
+						content: [
+							{
+								type: 'text',
+								text: [
+									'Describe this room for an interior designer who will critique it. Use exactly this structure:',
+									'',
+									'First, ONE single-sentence line giving the overall room: its general style, lighting, and feel.',
+									'',
+									'Then a bulleted list of the notable furniture and objects (roughly 6-12 items, most prominent first). ONE line per item, in the form: "<item> — <key material/colour> — <position in the room>". Position means where it sits (e.g. "left wall", "under the window", "centre, between the chair and sofa").',
+									'If an item looks like a recognisable IKEA product, append its product/range name and confidence, e.g. "(IKEA BILLY, high confidence)"; for other IKEA ranges think KALLAX, POÄNG, LACK, MALM, HEMNES, EKTORP/KLIPPAN, RANARP. If it just reads as generic flat-pack, say "(generic flat-pack)".',
+									'',
+									'Report only what is visible. Be concise and observational — no opinions, ratings, or recommendations; the designer supplies the judgement.'
+								].join('\n')
+							},
+							{ type: 'image_url', image_url: { url: imageDataUri } }
+						]
+					}
+				]
+			})
+		});
+		if (!res.ok) return null;
+		const data = (await res.json()) as {
+			choices?: { message?: { content?: string } }[];
+		};
+		return data?.choices?.[0]?.message?.content?.trim() ?? null;
+	} catch {
+		return null;
+	}
+}
 
 interface EditRequest {
 	instruction?: unknown;
@@ -114,9 +178,13 @@ export const POST: RequestHandler = async ({ request, fetch }) => {
 		throw error(502, 'OpenRouter returned no image data.');
 	}
 
+	const imageDataUri = `data:${mimeFromBase64(b64)};base64,${b64}`;
+	const description = await describeRoom(imageDataUri, fetch, apiKey);
+
 	return json({
-		image: `data:${mimeFromBase64(b64)};base64,${b64}`,
+		image: imageDataUri,
 		model,
-		cost: result?.usage?.cost ?? null
+		cost: result?.usage?.cost ?? null,
+		description
 	});
 };

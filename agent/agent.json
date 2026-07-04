@@ -1,0 +1,9 @@
+{
+  "agent_id": "agent_0601kwphk3r4efg8mjde4t5aa9s6",
+  "name": "De-Kea",
+  "llm": "gemini-2.5-flash",
+  "system_prompt_file": "de-kea.system.md",
+  "tool_files": [
+    "tools/edit-room-image.json"
+  ]
+}
