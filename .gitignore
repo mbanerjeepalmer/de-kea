@@ -27,3 +27,4 @@ test-results
 # Local screenshot/debug artifacts
 .playwright-mcp/
 playwright-report/
+.claude/worktrees/
