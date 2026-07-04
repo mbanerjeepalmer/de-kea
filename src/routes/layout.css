@@ -1,0 +1,67 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+/*
+ * DE-KEA design system — "modern art gallery".
+ * Hard edges, sharp corners, black & white, one bold accent used sparingly.
+ * References: frieze.com, designmuseum.org.
+ */
+@theme {
+	/* Ink & paper */
+	--color-ink: #0a0a0a;
+	--color-paper: #f4f2ec;
+	--color-paper-pure: #ffffff;
+	--color-smoke: #6f6d66;
+	--color-line: #0a0a0a;
+
+	/* One bold accent — gallery vermilion. Used sparingly. */
+	--color-accent: #ff2e00;
+
+	/* Type: a strong grotesque for display, plain sans for body. */
+	--font-display: 'Helvetica Neue', 'Arial Narrow', system-ui, sans-serif;
+	--font-sans: 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
+
+	/* Gallery has no rounded corners. */
+	--radius-none: 0px;
+}
+
+@layer base {
+	html {
+		background: var(--color-paper);
+		color: var(--color-ink);
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+	}
+
+	body {
+		margin: 0;
+	}
+
+	/* Everything is hard-edged by default. */
+	button,
+	input,
+	textarea,
+	img,
+	.card {
+		border-radius: 0;
+	}
+
+	::selection {
+		background: var(--color-accent);
+		color: var(--color-paper-pure);
+	}
+}
+
+@utility halftone {
+	/* Decorative halftone dot texture motif. */
+	background-image: radial-gradient(var(--color-ink) 1.1px, transparent 1.2px);
+	background-size: 7px 7px;
+}
+
+@utility text-display {
+	font-family: var(--font-display);
+	font-weight: 800;
+	letter-spacing: -0.03em;
+	line-height: 0.95;
+	text-transform: uppercase;
+}
