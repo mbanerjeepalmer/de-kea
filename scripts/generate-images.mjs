@@ -2,20 +2,21 @@
 /**
  * Author the hardcoded homepage demo sequence for DE-KEA.
  *
- * Since v1.2 the journey itself is live (`/api/zap`, `/api/edit-image`), so the
- * only canned imagery left is the homepage demo: a scripted walkthrough of the
- * product story told in stills. This build-time step is run by hand once and
- * its outputs are committed to `static/images/`, so the homepage stays fully
- * offline.
+ * v1.2 is a hardcoded walkthrough, so all of its imagery is authored here at
+ * build time and committed to `static/images/` — the app runs fully offline.
+ * (The live `/api/zap` + `/api/edit-image` endpoints use the same OpenRouter
+ * pipeline and remain the v1.3 seam.)
  *
  * Edits are CHAINED so the room stays consistent: each stage edits the
  * previous stage's output.
  *
- *   ikea-room ──zap──▶ ikea-room-zapped ──▶ demo-bookcase ──▶ demo-sofa
- *                                                   ──▶ demo-table ──▶ demo-chair
+ *   ikea-room ──true removal──▶ ikea-room-removed
+ *     ├─▶ demo-bookcase ─▶ demo-sofa ─▶ demo-table ─▶ demo-chair   (homepage)
+ *     ├─▶ journey-sofa-removed ─▶ journey-bookcase-a/b ─▶ journey-bust
+ *     └─▶ journey-sofa-a / journey-sofa-b                          (try-ons)
  *
- * The first two files are the committed demo room and its real `/api/zap`
- * output; this script fills in the item-by-item redesign stages after them.
+ * The removal stage adds NOTHING in place of the junk (per v1.1 feedback);
+ * the redesign stages then add or replace one item each.
  *
  * Usage:
  *   node scripts/generate-images.mjs
@@ -73,12 +74,31 @@ const CONSISTENCY =
  *               bookcase A/B, and the Bonhams bust finale)
  */
 const STAGES = [
+	// ---- the shared base: the IKEA genuinely REMOVED, nothing new added -------
+	// (Per feedback the "removed" image must not contain replacement objects.
+	// The blue sofa and the armchair stay — they're dealt with, item by item,
+	// in the journey and demo stages that follow.)
+	{
+		name: 'ikea-room-removed',
+		from: 'static/images/ikea-room.png',
+		prompt:
+			'Remove the IKEA and flat-pack junk from this room and add NOTHING in its place: the white ' +
+			'KALLAX cube shelving unit on the left with its white storage boxes, the white DRÖNA-style ' +
+			'boxes, the tall white BILLY bookcase on the right with everything on it, the black LACK ' +
+			'side table in the centre, and all the posters and prints taped to the walls. Leave bare ' +
+			'wall, floor and empty space where they stood — no new furniture, no new shelving, no new ' +
+			'decor. Keep the blue sofa, the armchair with the person in it, the floor lamp, the rug, ' +
+			'the TV unit and the plants exactly as they are. ' +
+			CONSISTENCY
+	},
+
+	// ---- the homepage demo loop (one item transformed per stage) --------------
 	{
 		name: 'demo-bookcase',
-		from: 'static/images/ikea-room-zapped.jpg',
+		from: 'ikea-room-removed',
 		prompt:
-			'Replace the tall bookcase on the right-hand wall with a characterful antique dark-oak ' +
-			'bookcase with glazed doors, its shelves warmly and neatly filled. ' +
+			'Add a characterful antique dark-oak bookcase with glazed doors against the right-hand ' +
+			'wall where there is now empty space, its shelves warmly and neatly filled. ' +
 			CONSISTENCY
 	},
 	{
@@ -93,8 +113,8 @@ const STAGES = [
 		name: 'demo-table',
 		from: 'demo-sofa',
 		prompt:
-			'Replace the wooden coffee table with a mid-century teak coffee table with slender tapered ' +
-			'legs, a small stack of hardbacks and a ceramic vase on top. ' +
+			'Add a mid-century teak coffee table with slender tapered legs in the middle of the room, ' +
+			'with a small stack of hardbacks and a ceramic vase on top. ' +
 			CONSISTENCY
 	},
 	{
@@ -112,7 +132,7 @@ const STAGES = [
 	// Bonhams bust placed via a second reference image.
 	{
 		name: 'journey-sofa-removed',
-		from: 'static/images/ikea-room-zapped.jpg',
+		from: 'ikea-room-removed',
 		prompt:
 			'Remove the blue sofa — along with the throw draped over it, its cushions and the clutter ' +
 			'sitting on it — completely, leaving clean empty floor and wall where it stood. ' +
@@ -120,7 +140,7 @@ const STAGES = [
 	},
 	{
 		name: 'journey-sofa-a',
-		from: 'static/images/ikea-room-zapped.jpg',
+		from: 'ikea-room-removed',
 		prompt:
 			'Replace the blue sofa (and the throw draped over it, and the clutter on it) with an elegant ' +
 			'vintage tan leather chesterfield sofa with a couple of tasteful cushions. ' +
@@ -128,7 +148,7 @@ const STAGES = [
 	},
 	{
 		name: 'journey-sofa-b',
-		from: 'static/images/ikea-room-zapped.jpg',
+		from: 'ikea-room-removed',
 		prompt:
 			'Replace the blue sofa (and the throw draped over it, and the clutter on it) with a ' +
 			'mid-century sofa in deep teal velvet with warm wooden legs and a couple of tasteful cushions. ' +
@@ -138,16 +158,16 @@ const STAGES = [
 		name: 'journey-bookcase-a',
 		from: 'journey-sofa-removed',
 		prompt:
-			'Replace the tall bookcase on the right-hand wall with a characterful antique dark-oak ' +
-			'bookcase with glazed doors, its shelves warmly and neatly filled. ' +
+			'Add a characterful antique dark-oak bookcase with glazed doors against the right-hand ' +
+			'wall where there is now empty space, its shelves warmly and neatly filled. ' +
 			CONSISTENCY
 	},
 	{
 		name: 'journey-bookcase-b',
 		from: 'journey-sofa-removed',
 		prompt:
-			'Replace the tall bookcase on the right-hand wall with an open mid-century teak shelving ' +
-			'unit with slim uprights, neatly styled with books, a plant and ceramics. ' +
+			'Add an open mid-century teak shelving unit with slim uprights against the right-hand wall ' +
+			'where there is now empty space, neatly styled with books, a plant and ceramics. ' +
 			CONSISTENCY
 	},
 	{
@@ -156,8 +176,9 @@ const STAGES = [
 		extraRefs: ['static/images/bonhams-bust.jpg'],
 		prompt:
 			'Place the small ancient Egyptian cobalt-blue glass bust from the second reference image on ' +
-			'the coffee table in this room, at a realistic small scale (it is only a few centimetres ' +
-			'tall), lit consistently with the room. ' +
+			'one of the eye-level shelves of the dark-oak bookcase, at a realistic small scale (it is ' +
+			'only a few centimetres tall), lit consistently with the room. Keep the output image the ' +
+			'same landscape aspect ratio as the first reference image. ' +
 			CONSISTENCY
 	}
 ];

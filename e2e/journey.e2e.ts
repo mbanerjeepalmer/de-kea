@@ -12,7 +12,7 @@ test('the journey: zap → sofa → cost → Dalston → Kingsland Road → book
 
 	// Zapped: the withering removal list and the after image are already there.
 	await expect(page.getByRole('heading', { name: 'Removed' })).toBeVisible();
-	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /ikea-room-zapped/);
+	await expect(page.getByTestId('image-pane-img')).toHaveAttribute('src', /ikea-room-removed/);
 
 	// First move: get rid of the sofa (chip).
 	await page.getByRole('button', { name: 'Get rid of the sofa' }).click();

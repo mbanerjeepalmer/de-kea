@@ -4,6 +4,7 @@
 	import Cta from './Cta.svelte';
 	import CameraCapture from './CameraCapture.svelte';
 	import IkeaLogo from './IkeaLogo.svelte';
+	import DekeaLogo from './DekeaLogo.svelte';
 
 	// "Take photo" opens a REAL camera view (per v1.1 feedback) — but the
 	// journey itself runs on the hackathon canned room, so the captured frame
@@ -21,8 +22,8 @@
 		<p class="mb-4 inline-block bg-accent px-2 py-1 text-sm font-bold uppercase tracking-widest text-paper-pure">
 			<IkeaLogo />? I hardly know her.
 		</p>
-		<h1 class="text-display text-6xl leading-[0.9] text-ink sm:text-7xl md:text-8xl">
-			DE<span class="text-accent">-</span>KEA
+		<h1 class="text-display text-6xl leading-[0.9] sm:text-7xl md:text-8xl">
+			<DekeaLogo />
 		</h1>
 		<p class="mt-6 max-w-md text-lg text-ink">
 			Get rid of the <IkeaLogo /> in your life. Photograph a room, and we'll strip out the

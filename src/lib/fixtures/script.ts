@@ -18,33 +18,27 @@ import type { ImageRef } from '$lib/journey/types';
 export const demoStages = [
 	{
 		src: '/images/ikea-room.png',
-		alt: 'A living room crowded with IKEA furniture — KALLAX shelving, a POÄNG chair, BILLY bookcases and framed posters.',
-		label: 'Before'
+		alt: 'A living room crowded with IKEA furniture — KALLAX shelving, a POÄNG chair, BILLY bookcases and framed posters.'
 	},
 	{
-		src: '/images/ikea-room-zapped.jpg',
-		alt: 'The same living room with every IKEA item stripped out.',
-		label: 'IKEA removed'
+		src: '/images/ikea-room-removed.png',
+		alt: 'The same living room with the IKEA junk genuinely removed — bare walls and open space, nothing new added.'
 	},
 	{
 		src: '/images/demo-bookcase.png',
-		alt: 'The room with an antique dark-oak bookcase with glazed doors.',
-		label: 'New bookcase'
+		alt: 'The room with an antique dark-oak bookcase with glazed doors.'
 	},
 	{
 		src: '/images/demo-sofa.png',
-		alt: 'The room with a vintage tan leather chesterfield sofa.',
-		label: 'New sofa'
+		alt: 'The room with a vintage tan leather chesterfield sofa.'
 	},
 	{
 		src: '/images/demo-table.png',
-		alt: 'The room with a mid-century teak coffee table.',
-		label: 'New table'
+		alt: 'The room with a mid-century teak coffee table.'
 	},
 	{
 		src: '/images/demo-chair.png',
-		alt: 'The finished room, with a deep green wingback armchair.',
-		label: 'New chair'
+		alt: 'The finished room, with a deep green wingback armchair.'
 	}
 ] as const;
 
@@ -55,10 +49,10 @@ export const images = {
 		src: '/images/ikea-room.png',
 		alt: 'Your room, before: crowded with IKEA furniture and flat-pack clutter.'
 	},
-	/** IKEA removed (real /api/zap output for this room). */
+	/** The IKEA genuinely removed — nothing added in its place. */
 	zapped: {
-		src: '/images/ikea-room-zapped.jpg',
-		alt: 'Your room with the IKEA removed.'
+		src: '/images/ikea-room-removed.png',
+		alt: 'Your room with the IKEA removed: bare walls and open space where the flat-pack stood.'
 	},
 	/** The blue sofa gone entirely — the canonical first move. */
 	sofaRemoved: {

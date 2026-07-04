@@ -1,16 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-	<!-- DE-KEA mark: ink square, paper monogram, the vermilion hyphen doing the talking. -->
-	<rect width="64" height="64" fill="#0a0a0a" />
-	<text
-		x="32"
-		y="27"
-		text-anchor="middle"
-		dominant-baseline="central"
-		fill="#f4f2ec"
+	<!-- Approximation of the DE-KEA lockup at favicon scale:
+	     the red "D" we added, bolted onto the blue-and-yellow "K" remainder. -->
+	<rect width="64" height="64" fill="#0058ab"/>
+	<ellipse cx="32" cy="32" rx="29" ry="19" fill="#ffdb00"/>
+	<text x="32" y="34" text-anchor="middle" dominant-baseline="central"
 		font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
-		font-size="26"
-		font-weight="900"
-		letter-spacing="1"
-	>DE</text>
-	<rect x="14" y="42" width="36" height="10" fill="#ff2e00" />
+		font-size="26" font-weight="900" font-style="italic"
+		letter-spacing="0.5"><tspan fill="#ff2e00">D</tspan><tspan fill="#0058ab">K</tspan></text>
 </svg>
