@@ -53,6 +53,33 @@ test('the journey: zap → sofa → cost → Dalston → Kingsland Road → book
 	await expect(page.getByTestId('chat-input')).toHaveCount(0);
 });
 
+test('home: "Take photo" opens the real camera; the shutter lands in the workspace', async ({
+	page
+}) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { name: 'DE-KEA' })).toBeVisible();
+
+	// The camera view opens with a live preview (Chromium's fake device).
+	await page.getByRole('button', { name: 'Take photo' }).click();
+	await expect(page.getByTestId('camera-capture')).toBeVisible();
+	await expect(page.getByTestId('camera-preview')).toBeVisible();
+
+	// Shutter → the workspace, where the canned journey has already zapped.
+	await page.getByTestId('camera-shutter').click();
+	await expect(page).toHaveURL(/\/workspace$/);
+	await expect(page.getByRole('heading', { name: 'Removed' })).toBeVisible();
+});
+
+test('the image pane defaults to a third of the workspace', async ({ page }) => {
+	await page.goto('/workspace');
+	const imagePane = await page.getByTestId('image-pane').boundingBox();
+	const conversation = await page.getByTestId('conversation-pane').boundingBox();
+	expect(imagePane && conversation).toBeTruthy();
+	// Image pane ≈ half the conversation pane's height (1/3 vs 2/3 of the split).
+	expect(imagePane!.height).toBeLessThan(conversation!.height * 0.6);
+	expect(imagePane!.height).toBeGreaterThan(conversation!.height * 0.4);
+});
+
 test('free text works as well as chips (loose intent matching)', async ({ page }) => {
 	await page.goto('/workspace');
 	await page.getByTestId('chat-input').fill('please bin that horrible couch');
